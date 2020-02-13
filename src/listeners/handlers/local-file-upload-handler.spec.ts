@@ -1,6 +1,6 @@
 import LocalFileUploadHandler from "./local-file-upload-handler";
 import * as url from "url";
-import {ConversionMap, Fastq2BamConvertRequest, FileUploadMessage} from "../../common/types";
+import {ConversionMap, FileUploadMessage} from "../../common/types";
 import TusUpload from "../../model/tus-upload";
 
 

@@ -6,14 +6,26 @@ import TusUpload from "../model/tus-upload";
 import Promise from "bluebird";
 import * as path from "path";
 import {Server} from "http";
-import url from "url";
 import fs from "fs";
-import {S3TusUpload} from "../model/s3-tus-upload";
-import ts from "../common/types";
-import S3Info = ts.S3Info;
 
 const tus: any = require("tus-node-server");
 
+
+function deleteFolderRecursive(path: string) {
+    let files = [];
+    if( fs.existsSync(path) ) {
+        files = fs.readdirSync(path);
+        files.forEach(function(file){
+            const curPath = path + "/" + file;
+            if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+}
 
 describe("Uploader tests", () => {
     type TusTestServer = {
@@ -79,6 +91,7 @@ describe("Uploader tests", () => {
 
     afterAll(() => {
         stopTestTusServer(tusTestServer);
+        deleteFolderRecursive(path.resolve(__dirname, "../../util"));
     });
 
     test("it should store a file on a tus-server", () => {
@@ -150,74 +163,4 @@ describe("Uploader tests", () => {
             })
             .catch(err => fail(err));
     });
-
-    //
-    // test("it should stream a file from AWS", () => {
-    //     jest.setTimeout(15000);
-    //
-    //     const cloudUrl = new url.URL("s3://https://org-hca-dss-checkout-dev/bundles/125592cd-c350-47db-a412-abfe6ba02c86.2018-09-21T154249.020512Z/cell_suspension_0.json");
-    //     const tusServerURl = "http://" + tusTestServer.host + ":" + tusTestServer.port + "/files";
-    //
-    //     const tusUpload = new TusUpload({fileName: "mock-file-name"}, tusServerURl);
-    //     tusUpload.submission = mockSubmission;
-    //     tusUpload.uploadUrl = "http://" + tusTestServer.host + ":" + tusTestServer.port + "/files";
-    //     const s3Info: S3Info = {
-    //         s3Location: S3TusUpload._s3LocationFromPresignedUrl(cloudUrl),
-    //         s3AuthInfo: S3TusUpload._s3AuthFromPresignedUrl(cloudUrl)
-    //     };
-    //     const s3TusUpload = new S3TusUpload(s3Info, tusUpload);
-    //
-    //     let fileUploadedSuccessfully = false;
-    //
-    //     tusTestServer.tusServer!.on(tus.EVENTS.EVENT_FILE_CREATED, (event: any) => {
-    //         console.log(`File created for new upload request ${event.file.id}`);
-    //         fileUploadedSuccessfully = true;
-    //     });
-    //
-    //     const fileUploader = new FileUploader(tokenManager);
-    //     return fileUploader.stageS3File(s3TusUpload)
-    //         .then(upload => {
-    //             expect(upload).toBeTruthy();
-    //             return Promise.delay(2000)
-    //                 .then(() => {
-    //                     expect(fileUploadedSuccessfully).toBeTruthy();
-    //                 });
-    //         });
-    // });
-    //
-    // test("it should stream a file from AWS using a pre-signed URL", () => {
-    //     jest.setTimeout(25000);
-    //
-    //     const cloudUrl = new url.URL("https://org-hca-dss-checkout-prod.s3.amazonaws.com/bundles/b6d096f4-239a-476d-9685-2a03c86dc06b.2018-10-30T160600.058907Z/CG00052_SingleCell3_ReagentKitv2UserGuide_RevE.pdf?AWSAccessKeyId=ASIARSZHKI4KDLBA4D6U&Signature=%2BqIDnrNL28%2FXKTuARZmZBwN9jqM%3D&x-amz-security-token=FQoGZXIvYXdzEM7%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDITjnMGJ7QY5HJqx0yLgAcpRtfyqp%2BW9i8fvR1iGg0dl8lmAiaXi5hSPt0JYt%2BdHZlGYfKpaQ3KkbudmoAfXQeEPpyGiWjQPw1%2B12uY6tCSJ%2FS%2FtGFBrvS%2B3aQMP7W6BZISVyuua6PwbNTVf4nTRjjS20bt%2F1MjqmgyJVBrzfv6dwMTFF%2BL8R49bCb6qNBmXIRniGh3nQgkKxxsX2PuNKKfbUWO28pxAPliJtrn8D79YCFT9m27js%2FGk4Ceaf9NCkjYVTEVYfpBUz9TqAaqtrs7mJIVVA2AH0J1P1zgSgyh90500mPfl0vcuALi17AJjKNf0398F&Expires=1542992678");
-    //     const tusServerURl = "http://" + tusTestServer.host + ":" + tusTestServer.port + "/files";
-    //
-    //     const tusUpload = new TusUpload({fileName: "mock-file-name"}, tusServerURl);
-    //     tusUpload.submission = mockSubmission;
-    //     tusUpload.uploadUrl = "http://" + tusTestServer.host + ":" + tusTestServer.port + "/files";
-    //     tusUpload.submission = mockSubmission;
-    //     tusUpload.fileInfo.fileSize = 5645416;
-    //     const s3Info: S3Info = {
-    //         s3Location: S3TusUpload._s3LocationFromPresignedUrl(cloudUrl),
-    //         s3AuthInfo: S3TusUpload._s3AuthFromPresignedUrl(cloudUrl)
-    //     };
-    //
-    //     const s3TusUpload = new S3TusUpload(s3Info, tusUpload);
-    //
-    //     let fileUploadedSuccessfully = false;
-    //
-    //     tusTestServer.tusServer!.on(tus.EVENTS.EVENT_FILE_CREATED, (event: any) => {
-    //         console.log(`File created for new upload request ${event.file.id}`);
-    //         fileUploadedSuccessfully = true;
-    //     });
-    //
-    //     const fileUploader = new FileUploader(tokenManager);
-    //     return fileUploader.stageS3File(s3TusUpload)
-    //         .then(upload => {
-    //             expect(upload).toBeTruthy();
-    //             return Promise.delay(2000)
-    //                 .then(() => {
-    //                     expect(fileUploadedSuccessfully).toBeTruthy();
-    //                 });
-    //         });
-    // });
 });

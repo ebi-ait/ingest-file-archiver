@@ -22,7 +22,7 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     handle(msg: AmqpMessage) : Promise<void> {
-            return new Promise<void>((resolve, reject) => {
+            return new Promise<void>(() => {
                 LocalFileUploadHandler._parseAmqpMessage(msg)
                     .then((msgContent) => {return this.doLocalFileUpload(msgContent)});
             });

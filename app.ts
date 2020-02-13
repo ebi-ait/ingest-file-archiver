@@ -6,10 +6,7 @@ import FileUploader from "./src/util/file-uploader";
 import AapTokenClient from "./src/util/aap-token-client";
 import {
     AAPCredentials,
-    ConversionMap,
-    FileUploadMessage,
     UploadJob,
-    UploadJobConversion,
     UploadPlan
 } from "./src/common/types";
 import Fastq2BamConverter from "./src/util/fastq-2-bam-converter";
@@ -18,9 +15,6 @@ import R from "ramda";
 import Promise from "bluebird";
 import TokenManager from "./src/util/token-manager";
 import UploadPlanParser from "./src/util/upload-plan-parser";
-
-const args = process.argv;
-
 /* ----------------------------------- */
 
 const tokenClient = (() => {
@@ -79,7 +73,7 @@ processUploadJobsSequential = (uploadJobs: UploadJob[]) : Promise<void> => {
 const start = () => {
     processUploadJobsSequential(uploadPlan.jobs)
         .then(() => {
-            console.log("Finshed");
+            console.log("Finished");
             process.exit(0)
         })
         .catch(error => {

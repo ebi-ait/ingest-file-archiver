@@ -11,10 +11,10 @@ Run `npm install`
 
 This component is configured to listen to serialized JSON messages from an AMQP queue with the following format. Each
 message should have a `submission` and `s3Url` key.
-```javascript
+```metadata json
 {
-    "s3Url" : string // an s3:// URL for this file
-    "submission" : string // the ID of the Unified Submissions Interface(USI) submission to which the file is destined 
+    "s3Url": string // an s3:// URL for this file
+    "submission": string // the ID of the Unified Submissions Interface(USI) submission to which the file is destined 
 }
 ```
 
@@ -42,7 +42,7 @@ Environment variables for connecting to the RabbitMQ broker:
  The bundle-spec .json file should adhere to the following format:
  
  
-```javascript
+```metadata json
 {
     "jobs": [
         "usi_api_url": string,
