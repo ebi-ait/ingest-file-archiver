@@ -46,12 +46,12 @@ const bundleDownloader = (() => {
     return new BundleDownloader("hca");
 })();
 
-const bundleDirBasePath = (() => {
-    return config.get("FILES.bundleBaseDir") as string;
+const dirBasePath = (() => {
+    return config.get("FILES.baseDir") as string;
 })();
 
 const localFileUploadHandler = (() => {
-    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, bundleDownloader, bundleDirBasePath);
+    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, bundleDownloader, dirBasePath);
 })();
 
 

@@ -1,6 +1,6 @@
 {
   "FILES": {
-    "bundleBaseDir": "BUNDLE_BASE_DIR",
+    "baseDir": "BASE_DIR",
     "uploadPlanPath": "UPLOAD_PLAN_PATH"
   },
   "AUTH": {

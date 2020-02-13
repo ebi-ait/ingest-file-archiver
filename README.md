@@ -37,7 +37,7 @@ Environment variables for connecting to the RabbitMQ broker:
  In this mode the file-archiver will read a .json file specifying bundles to be archived 
  as well as any necessary fastq->bam conversions.
  
- `docker run -e BUNDLE_BASE_DIR=<provide> -e UPLOAD_PLAN_PATH=<provide> -e AAP_USERNAME=<provide> -e AAP_PASSWORD=<provide> -e AAP_URL=<provide> <image id>`
+ `docker run -e BASE_DIR=<provide> -e UPLOAD_PLAN_PATH=<provide> -e AAP_USERNAME=<provide> -e AAP_PASSWORD=<provide> -e AAP_URL=<provide> <image id>`
  
  The bundle-spec .json file should adhere to the following format:
  
@@ -73,4 +73,4 @@ Environment variables must be set when running in the mode:
 
 `UPLOAD_PLAN_PATH`:	Full path of the bundle specification .json
 
-`BUNDLE_BASE_DIR`: Full path of the base working directory space for downloading and bam-converting bundle data
+`BASE_DIR`: Full path of the base working directory space for downloading and bam-converting bundle data

@@ -4,7 +4,7 @@ for param in "$@"
 do
     case $param in
 	-d=*|--base-dir=*)
-	    export BUNDLE_BASE_DIR=${param#*=}
+	    export BASE_DIR=${param#*=}
 	    shift
 	    ;;
 	-f=*|--upload-plan=*)
@@ -26,7 +26,7 @@ do
     esac
 done
 
-if [ -z ${BUNDLE_BASE_DIR} ] || [ -z ${UPLOAD_PLAN_PATH} ] || [ -z ${AAP_URL} ] || \
+if [ -z ${BASE_DIR} ] || [ -z ${UPLOAD_PLAN_PATH} ] || [ -z ${AAP_URL} ] || \
        [ -z ${AAP_USERNAME} ] || [ -z  ${AAP_PASSWORD} ]; then
     echo "One of the required parameters is not provided."
     exit 1
