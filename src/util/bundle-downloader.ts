@@ -7,11 +7,13 @@ import Promise from "bluebird";
 import {spawn} from "child_process";
 import {BundleDownloadParams, BundleDownloadRequest} from "../common/types";
 import FileExistenceChecker from "./file-existence-checker";
+import {FileDownloader} from "./file-downloader";
 
-class BundleDownloader {
+class BundleDownloader extends FileDownloader {
     hcaCliPath: string;
 
     constructor(hcaCliPath: string) {
+        super();
         this.hcaCliPath = hcaCliPath;
     }
 
@@ -22,13 +24,12 @@ class BundleDownloader {
      *
      * @param bundleUuid
      * @param bundleBaseDir
-     * @param environment
      */
-    assertBundle(bundleUuid: string, bundleBaseDir: string, environment?: string) : Promise<void> {
-        return new Promise<void>( (resolve) => {
+    assertFile(bundleUuid: string, bundleBaseDir: string): Promise<void> {
+        return new Promise<void>((resolve) => {
             BundleDownloader._checkBundleExists(bundleUuid, bundleBaseDir)
                 .then((itExists) => {
-                    if(itExists) {
+                    if (itExists) {
                         console.log(`Bundle with uuid ${bundleUuid} already exists at ${bundleBaseDir}`);
                         resolve();
                     } else {
@@ -38,16 +39,11 @@ class BundleDownloader {
                             cloudReplica: "aws",
                             bundleBaseDir: bundleBaseDir
                         };
-
                         BundleDownloader._downloadBundle(this.hcaCliPath, bundleDownloadRequest)
                             .then(() => resolve());
                     }
                 })
         });
-    }
-
-    downloadBundle(bundleDownloadRequest: BundleDownloadRequest): Promise<void> {
-        return BundleDownloader._downloadBundle(this.hcaCliPath, bundleDownloadRequest);
     }
 
     static _downloadBundle(hcaCliPath: string, bundleDownloadRequest: BundleDownloadRequest) : Promise<void> {

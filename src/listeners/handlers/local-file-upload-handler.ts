@@ -6,20 +6,19 @@ import url from "url";
 import {ConversionMap, Fastq2BamConvertRequest, FileUploadMessage, UploadAssertion} from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
-import BundleDownloader from "../../util/bundle-downloader";
-import {Upload} from "tus-js-client";
+import FileDownloader from "../../util/file-downloader";
 
 class LocalFileUploadHandler implements IHandler {
     fileUploader: FileUploader;
     fastq2BamConverter: Fastq2BamConverter;
-    bundleDownloader: BundleDownloader;
-    bundleDirBasePath: string;
+    fileDownloader: FileDownloader;
+    dirBasePath: string;
 
-    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, bundleDownloader: BundleDownloader, bundleDirBasePath: string) {
+    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, fileDownloader: FileDownloader, dirBasePath: string) {
         this.fileUploader = fileUploader;
         this.fastq2BamConverter = fastq2BamConverter;
-        this.bundleDownloader = bundleDownloader;
-        this.bundleDirBasePath = bundleDirBasePath;
+        this.fileDownloader = fileDownloader;
+        this.dirBasePath = dirBasePath;
     }
 
     handle(msg: AmqpMessage) : Promise<void> {
@@ -30,9 +29,9 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     doLocalFileUpload(fileUploadMessage: FileUploadMessage): Promise<void>{
-        return LocalFileUploadHandler._maybeDownloadBundle(fileUploadMessage, this.bundleDirBasePath, this.bundleDownloader)
-            .then(() => { return LocalFileUploadHandler._maybeBamConvert(fileUploadMessage, this.bundleDirBasePath, this.fastq2BamConverter)})
-            .then(() => { return LocalFileUploadHandler._maybeUpload(fileUploadMessage, this.fileUploader, this.bundleDirBasePath)})
+        return LocalFileUploadHandler._maybeDownloadFile(fileUploadMessage, this.dirBasePath, this.fileDownloader)
+            .then(() => { return LocalFileUploadHandler._maybeBamConvert(fileUploadMessage, this.dirBasePath, this.fastq2BamConverter)})
+            .then(() => { return LocalFileUploadHandler._maybeUpload(fileUploadMessage, this.fileUploader, this.dirBasePath)})
             .then(() => { return Promise.resolve()});
     }
 
@@ -45,8 +44,8 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _maybeDownloadBundle(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, bundleDownloader: BundleDownloader): Promise<void> {
-        return bundleDownloader.assertBundle(fileUploadMessage.bundleUuid, fileDirBasePath);
+    static _maybeDownloadFile(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fileDownloader: FileDownloader): Promise<void> {
+        return fileDownloader.assertFile(fileUploadMessage.bundleUuid, fileDirBasePath);
     }
 
     static _maybeBamConvert(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
