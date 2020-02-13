@@ -25,7 +25,7 @@ namespace ts {
 
     export type FileUploadMessage = {
         fileNames: string[],
-        bundleUuid: string,
+        manifestId: string,
         submissionUrl: string,
         usiUrl: string,
         conversionMap? : ConversionMap
@@ -110,7 +110,7 @@ namespace ts {
         ingest_api_url: string,
         submission_url: string,
         files: string[],
-        bundle_uuid: string,
+        manifest_id: string,
         conversion?: UploadJobConversion
     }
 

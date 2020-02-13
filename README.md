@@ -49,7 +49,7 @@ Environment variables for connecting to the RabbitMQ broker:
         "ingest_api_url": string,
         "submission_url": string,
         "files": string[],
-        "bundle_uuid": string,
+        "manifest_id": string,
         "conversion": {
             "output_name": string,
             "inputs": [{

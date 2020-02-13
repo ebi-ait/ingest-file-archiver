@@ -45,14 +45,14 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     static _maybeDownloadFile(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fileDownloader: FileDownloader): Promise<void> {
-        return fileDownloader.assertFile(fileUploadMessage.bundleUuid, fileDirBasePath);
+        return fileDownloader.assertFile(fileUploadMessage.manifestId, fileDirBasePath);
     }
 
     static _maybeBamConvert(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
         if(! fileUploadMessage.conversionMap) {
             return Promise.resolve();
         } else {
-            const bamConvertRequest = LocalFileUploadHandler._generateBamConvertRequest(fileUploadMessage.conversionMap!, `${fileDirBasePath}/${fileUploadMessage.bundleUuid}`);
+            const bamConvertRequest = LocalFileUploadHandler._generateBamConvertRequest(fileUploadMessage.conversionMap!, `${fileDirBasePath}/${fileUploadMessage.manifestId}`);
             return LocalFileUploadHandler._doBamConversion(fastq2BamConverter, bamConvertRequest);
         }
     }
@@ -93,7 +93,7 @@ class LocalFileUploadHandler implements IHandler {
 
         for(let i = 0; i < uploadMessage.fileNames.length; i ++) {
             const fileName = uploadMessage.fileNames[i];
-            const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadMessage.bundleUuid}/${fileName}`}, uploadFileEndpoint);
+            const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadMessage.manifestId}/${fileName}`}, uploadFileEndpoint);
             tusUpload.submission = LocalFileUploadHandler._submissionUuidFromSubmissionUri(new url.URL(uploadMessage.submissionUrl));
             tusUpload.usiUrl = usiUrl;
             tusUploads.push(tusUpload);

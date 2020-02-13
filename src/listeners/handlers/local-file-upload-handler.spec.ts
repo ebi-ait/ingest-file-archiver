@@ -17,14 +17,14 @@ describe("Local file uploader tests", () => {
         const mockSubmissionUuid = "deadbeef-dead-dead-dead-deaddeafbeef";
         const mockUsiUrl = "https://mock-usi";
         const mockSubmissionUrl = new url.URL(`${mockUsiUrl}/api/submissions/${mockSubmissionUuid}`);
-        const mockBundleUuid = "deadbaaa-dead-dead-dead-deaddeafbaaa";
+        const mockManifestId = "mock-manifest-id";
         const mockFileBasePathDir = "/data/myfiles";
 
         const mockUploadMessage : FileUploadMessage = {
             fileNames: mockFileNames,
             usiUrl: mockUsiUrl,
             submissionUrl: mockSubmissionUrl.toString(),
-            bundleUuid: mockBundleUuid
+            manifestId: mockManifestId
         };
 
         const uploadRequests: TusUpload[] = LocalFileUploadHandler._uploadRequestsFromUploadMessage(mockUploadMessage, mockFileBasePathDir);
@@ -32,7 +32,7 @@ describe("Local file uploader tests", () => {
         expect(uploadRequests.length).toBe(3);
 
         uploadRequests.forEach((tusUpload: TusUpload) => {
-            expect(tusUpload.fileInfo.filePath).toMatch((new RegExp(`${mockFileBasePathDir}/${mockBundleUuid}/mockFileName[123]`)));
+            expect(tusUpload.fileInfo.filePath).toMatch((new RegExp(`${mockFileBasePathDir}/${mockManifestId}/mockFileName[123]`)));
             expect(tusUpload.submission).toEqual(mockSubmissionUuid);
             expect(tusUpload.uploadUrl).toEqual(`${mockUsiUrl}/files/`);
             expect(tusUpload.fileInfo.fileName).toMatch(new RegExp("mockFileName[123]"));
@@ -45,8 +45,8 @@ describe("Local file uploader tests", () => {
         const mockIndex = "mockI.fastq.gz";
 
         const mockOutputName = "mockbam.bam";
-        const mockBundleUuid = "deadbaaa-dead-dead-dead-deaddeafbaaa";
-        const mockFileBasePathDir = `/data/myfiles/${mockBundleUuid}`;
+        const mockManifestId = "mock-manifest-id";
+        const mockFileBasePathDir = `/data/myfiles/${mockManifestId}`;
 
         const mockConversionMapPair: ConversionMap = {
             inputs: [

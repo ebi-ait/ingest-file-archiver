@@ -5,7 +5,7 @@ class UploadPlanParser {
 
     static uploadMessageForJob(uploadJob: UploadJob): FileUploadMessage {
         return {
-            bundleUuid: uploadJob.bundle_uuid,
+            manifestId: uploadJob.manifest_id,
             submissionUrl: uploadJob.submission_url,
             fileNames: uploadJob.files,
             usiUrl: uploadJob.usi_api_url,
