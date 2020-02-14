@@ -1,20 +1,20 @@
 import Promise from "bluebird";
-import {IHandler, AmqpMessage} from "./handler";
+import {AmqpMessage, IHandler} from "./handler";
 import FileUploader from "../../util/file-uploader";
 import TusUpload from "../../model/tus-upload";
 import url from "url";
 import {ConversionMap, Fastq2BamConvertRequest, FileUploadMessage, UploadAssertion} from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
-import FileDownloader from "../../util/file-downloader";
+import IFileDownloader from "../../util/file-downloader";
 
 class LocalFileUploadHandler implements IHandler {
     fileUploader: FileUploader;
     fastq2BamConverter: Fastq2BamConverter;
-    fileDownloader: FileDownloader;
+    fileDownloader: IFileDownloader;
     dirBasePath: string;
 
-    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, fileDownloader: FileDownloader, dirBasePath: string) {
+    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, fileDownloader: IFileDownloader, dirBasePath: string) {
         this.fileUploader = fileUploader;
         this.fastq2BamConverter = fastq2BamConverter;
         this.fileDownloader = fileDownloader;
@@ -44,7 +44,7 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _maybeDownloadFile(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fileDownloader: FileDownloader): Promise<void> {
+    static _maybeDownloadFile(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fileDownloader: IFileDownloader): Promise<void> {
         return fileDownloader.assertFile(fileUploadMessage.manifestId, fileDirBasePath);
     }
 

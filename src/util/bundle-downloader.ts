@@ -7,13 +7,12 @@ import Promise from "bluebird";
 import {spawn} from "child_process";
 import {BundleDownloadParams, BundleDownloadRequest} from "../common/types";
 import FileExistenceChecker from "./file-existence-checker";
-import {FileDownloader} from "./file-downloader";
+import IFileDownloader from "./file-downloader";
 
-class BundleDownloader extends FileDownloader {
+class BundleDownloader implements IFileDownloader {
     hcaCliPath: string;
 
     constructor(hcaCliPath: string) {
-        super();
         this.hcaCliPath = hcaCliPath;
     }
 
