@@ -1,7 +1,8 @@
 import Promise from "bluebird";
+import {DownloadFilesJob} from "../common/types";
 
 export interface IFileDownloader {
-    assertFile(file: string, baseDir: string): Promise<void>;
+    assertFiles(downloadJob: DownloadFilesJob): Promise<void>;
 }
 
 export default IFileDownloader

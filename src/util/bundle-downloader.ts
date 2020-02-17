@@ -5,7 +5,7 @@
 
 import Promise from "bluebird";
 import {spawn} from "child_process";
-import {BundleDownloadParams, BundleDownloadRequest} from "../common/types";
+import {BundleDownloadParams, BundleDownloadRequest, DownloadFilesJob} from "../common/types";
 import FileExistenceChecker from "./file-existence-checker";
 import IFileDownloader from "./file-downloader";
 
@@ -16,6 +16,12 @@ class BundleDownloader implements IFileDownloader {
         this.hcaCliPath = hcaCliPath;
     }
 
+    assertFiles(downloadJob: DownloadFilesJob): Promise<void> {
+        return this._assertBundle(downloadJob.container, downloadJob.basePath);
+        //ToDo: Check each file expected in downloadJob.files exists.
+    }
+
+
 
     /**
      *
@@ -24,7 +30,7 @@ class BundleDownloader implements IFileDownloader {
      * @param bundleUuid
      * @param bundleBaseDir
      */
-    assertFile(bundleUuid: string, bundleBaseDir: string): Promise<void> {
+    _assertBundle(bundleUuid: string, bundleBaseDir: string): Promise<void> {
         return new Promise<void>((resolve) => {
             BundleDownloader._checkBundleExists(bundleUuid, bundleBaseDir)
                 .then((itExists) => {

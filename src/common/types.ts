@@ -23,6 +23,17 @@ namespace ts {
         fileName: string
     }
 
+    export type DownloadFile = {
+        fileName: string,
+        source: string
+    }
+
+    export type DownloadFilesJob = {
+        basePath: string,
+        container: string,
+        files: DownloadFile[]
+    }
+
     export type FileUploadMessage = {
         fileNames: string[],
         manifestId: string,

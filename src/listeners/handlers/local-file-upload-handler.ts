@@ -3,7 +3,13 @@ import {AmqpMessage, IHandler} from "./handler";
 import FileUploader from "../../util/file-uploader";
 import TusUpload from "../../model/tus-upload";
 import url from "url";
-import {ConversionMap, Fastq2BamConvertRequest, FileUploadMessage, UploadAssertion} from "../../common/types";
+import {
+    ConversionMap,
+    DownloadFilesJob,
+    Fastq2BamConvertRequest,
+    FileUploadMessage,
+    UploadAssertion
+} from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
 import IFileDownloader from "../../util/file-downloader";
@@ -29,7 +35,13 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     doLocalFileUpload(fileUploadMessage: FileUploadMessage): Promise<void>{
-        return LocalFileUploadHandler._maybeDownloadFile(fileUploadMessage, this.dirBasePath, this.fileDownloader)
+        const downloadJob: DownloadFilesJob = {
+            'basePath': this.dirBasePath,
+            'container': fileUploadMessage.manifestId,
+            'files': []
+        };
+
+        return LocalFileUploadHandler._maybeDownloadFiles(downloadJob, this.fileDownloader)
             .then(() => { return LocalFileUploadHandler._maybeBamConvert(fileUploadMessage, this.dirBasePath, this.fastq2BamConverter)})
             .then(() => { return LocalFileUploadHandler._maybeUpload(fileUploadMessage, this.fileUploader, this.dirBasePath)})
             .then(() => { return Promise.resolve()});
@@ -44,8 +56,8 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _maybeDownloadFile(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fileDownloader: IFileDownloader): Promise<void> {
-        return fileDownloader.assertFile(fileUploadMessage.manifestId, fileDirBasePath);
+    static _maybeDownloadFiles(downloadJob: DownloadFilesJob, fileDownloader: IFileDownloader): Promise<void> {
+        return fileDownloader.assertFiles(downloadJob);
     }
 
     static _maybeBamConvert(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
