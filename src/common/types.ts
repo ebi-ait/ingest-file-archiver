@@ -34,8 +34,8 @@ namespace ts {
         files: DownloadFile[]
     }
 
-    export type FileUploadMessage = {
-        fileNames: string[],
+    export type UploadFilesJob = {
+        files: UploadFile[],
         manifestId: string,
         submissionUrl: string,
         usiUrl: string,
@@ -115,18 +115,23 @@ namespace ts {
             "read_index": string
         }[]
     }
+    export type UploadFile = {
+        name: string,
+        read_index: string,
+        cloud_url: string
+    }
 
-    export type UploadJob = {
+    export type Job = {
         usi_api_url: string,
         ingest_api_url: string,
         submission_url: string,
-        files: string[],
+        files: UploadFile[],
         manifest_id: string,
         conversion?: UploadJobConversion
     }
 
-    export type UploadPlan = {
-        jobs: UploadJob[]
+    export type Plan = {
+        jobs: Job[]
     }
 
     export type AlreadyUploaded = "ALREADY_UPLOADED";

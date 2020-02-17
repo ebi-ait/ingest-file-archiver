@@ -7,8 +7,10 @@ import {
     ConversionMap,
     DownloadFilesJob,
     Fastq2BamConvertRequest,
-    FileUploadMessage,
-    UploadAssertion
+    UploadFilesJob,
+    UploadAssertion,
+    UploadFile,
+    DownloadFile
 } from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
@@ -34,22 +36,34 @@ class LocalFileUploadHandler implements IHandler {
             });
     }
 
-    doLocalFileUpload(fileUploadMessage: FileUploadMessage): Promise<void>{
+    doLocalFileUpload(job: UploadFilesJob): Promise<void>{
         const downloadJob: DownloadFilesJob = {
             'basePath': this.dirBasePath,
-            'container': fileUploadMessage.manifestId,
-            'files': []
+            'container': job.manifestId,
+            'files': LocalFileUploadHandler._convertUploadFiles(job.files)
         };
 
         return LocalFileUploadHandler._maybeDownloadFiles(downloadJob, this.fileDownloader)
-            .then(() => { return LocalFileUploadHandler._maybeBamConvert(fileUploadMessage, this.dirBasePath, this.fastq2BamConverter)})
-            .then(() => { return LocalFileUploadHandler._maybeUpload(fileUploadMessage, this.fileUploader, this.dirBasePath)})
+            .then(() => { return LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter)})
+            .then(() => { return LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath)})
             .then(() => { return Promise.resolve()});
     }
 
-    static _parseAmqpMessage(msg: AmqpMessage) : Promise<FileUploadMessage> {
+    static _convertUploadFiles(uploadFiles: UploadFile[] ): DownloadFile[] {
+        let downloadFiles: DownloadFile[] = [];
+        for (let uploadFile of uploadFiles) {
+            let downloadFile : DownloadFile = {
+                'fileName': uploadFile.name,
+                'source': uploadFile.cloud_url,
+            };
+            downloadFiles.push(downloadFile);
+        }
+        return downloadFiles;
+    }
+
+    static _parseAmqpMessage(msg: AmqpMessage) : Promise<UploadFilesJob> {
         try {
-            return Promise.resolve(JSON.parse(msg.messageBytes) as FileUploadMessage);
+            return Promise.resolve(JSON.parse(msg.messageBytes) as UploadFilesJob);
         } catch (err) {
             console.error("Failed to parse message content (ignoring): " + msg.messageBytes);
             return Promise.reject(err);
@@ -60,11 +74,11 @@ class LocalFileUploadHandler implements IHandler {
         return fileDownloader.assertFiles(downloadJob);
     }
 
-    static _maybeBamConvert(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
-        if(! fileUploadMessage.conversionMap) {
+    static _maybeBamConvert(uploadFilesJob: UploadFilesJob, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
+        if(! uploadFilesJob.conversionMap) {
             return Promise.resolve();
         } else {
-            const bamConvertRequest = LocalFileUploadHandler._generateBamConvertRequest(fileUploadMessage.conversionMap!, `${fileDirBasePath}/${fileUploadMessage.manifestId}`);
+            const bamConvertRequest = LocalFileUploadHandler._generateBamConvertRequest(uploadFilesJob.conversionMap!, `${fileDirBasePath}/${uploadFilesJob.manifestId}`);
             return LocalFileUploadHandler._doBamConversion(fastq2BamConverter, bamConvertRequest);
         }
     }
@@ -91,22 +105,22 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _maybeUpload(fileUploadMessage: FileUploadMessage, fileUploader: FileUploader, fileDirBasePath: string): Promise<UploadAssertion[]> {
-        const tusUploads = LocalFileUploadHandler._uploadRequestsFromUploadMessage(fileUploadMessage, fileDirBasePath);
+    static _maybeUpload(uploadFilesJob: UploadFilesJob, fileUploader: FileUploader, fileDirBasePath: string): Promise<UploadAssertion[]> {
+        const tusUploads = LocalFileUploadHandler._uploadRequestsFromUploadMessage(uploadFilesJob, fileDirBasePath);
         const fn = (tusUpload: TusUpload) => fileUploader.assertFileUpload(tusUpload);
         const uploadPromises = R.map(fn, tusUploads);
         return Promise.all(uploadPromises);
     }
 
-    static _uploadRequestsFromUploadMessage(uploadMessage: FileUploadMessage, fileDirBasePath: string) : TusUpload[] {
+    static _uploadRequestsFromUploadMessage(uploadFilesJob: UploadFilesJob, fileDirBasePath: string) : TusUpload[] {
         const tusUploads: TusUpload[] = [];
-        const uploadFileEndpoint = `${uploadMessage.usiUrl}/files/`;
-        const usiUrl = uploadMessage.usiUrl;
+        const uploadFileEndpoint = `${uploadFilesJob.usiUrl}/files/`;
+        const usiUrl = uploadFilesJob.usiUrl;
 
-        for(let i = 0; i < uploadMessage.fileNames.length; i ++) {
-            const fileName = uploadMessage.fileNames[i];
-            const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadMessage.manifestId}/${fileName}`}, uploadFileEndpoint);
-            tusUpload.submission = LocalFileUploadHandler._submissionUuidFromSubmissionUri(new url.URL(uploadMessage.submissionUrl));
+        for(let i = 0; i < uploadFilesJob.files.length; i ++) {
+            const fileName = uploadFilesJob.files[i].name;
+            const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadFilesJob.manifestId}/${fileName}`}, uploadFileEndpoint);
+            tusUpload.submission = LocalFileUploadHandler._submissionUuidFromSubmissionUri(new url.URL(uploadFilesJob.submissionUrl));
             tusUpload.usiUrl = usiUrl;
             tusUploads.push(tusUpload);
         }

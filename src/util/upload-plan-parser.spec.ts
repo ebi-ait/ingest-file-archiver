@@ -1,17 +1,21 @@
-import {UploadJob} from "../common/types";
+import {Job} from "../common/types";
 import UploadPlanParser from "./upload-plan-parser";
 
 describe("Upload plan parser tests", () => {
    it("should handle null/undefined conversion maps in the upload plan", () => {
-       const mockUploadJob: UploadJob = {
+       const mockUploadJob: Job = {
            usi_api_url: "http://mock-usi-api-url",
            ingest_api_url: "http://mock-ingest-api-url",
            submission_url: "http://mock-usi-api-url/mock-submission-id",
-           files: ["mockFastq1.fast.gz"],
+           files: [{
+               name: 'mockFastq1.fast.gz',
+               read_index: "read1",
+               cloud_url: "cloud1"
+           }],
            manifest_id: "mock-manifest-id",
            conversion: undefined
        };
 
-       expect(UploadPlanParser.uploadMessageForJob(mockUploadJob)).toBeTruthy();
+       expect(UploadPlanParser.mapUploadFilesJob(mockUploadJob)).toBeTruthy();
    })
 });

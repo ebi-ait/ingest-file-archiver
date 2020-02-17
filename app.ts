@@ -6,8 +6,9 @@ import FileUploader from "./src/util/file-uploader";
 import AapTokenClient from "./src/util/aap-token-client";
 import {
     AAPCredentials,
-    UploadJob,
-    UploadPlan
+    Job,
+    Plan,
+    UploadFilesJob
 } from "./src/common/types";
 import Fastq2BamConverter from "./src/util/fastq-2-bam-converter";
 import BundleDownloader from "./src/util/bundle-downloader";
@@ -51,19 +52,19 @@ const localFileUploadHandler = (() => {
 
 const uploadPlanFilePath: string = config.get("FILES.uploadPlanPath");
 const uploadPlanFileData: Buffer = fs.readFileSync(uploadPlanFilePath);
-const uploadPlan: UploadPlan = JSON.parse(uploadPlanFileData.toString());
+const uploadPlan: Plan = JSON.parse(uploadPlanFileData.toString());
 
 /* ----------------------------------- */
 
-let processUploadJobsSequential: (uploadJobs: UploadJob[]) => Promise<void>;
-processUploadJobsSequential = (uploadJobs: UploadJob[]) : Promise<void> => {
+let processUploadJobsSequential: (uploadJobs: Job[]) => Promise<void>;
+processUploadJobsSequential = (uploadJobs: Job[]) : Promise<void> => {
     if(uploadJobs.length == 0) {
         return Promise.resolve();
     } else {
-        const uploadJob: UploadJob = R.head(uploadJobs)!;
-        const uploadMessage = UploadPlanParser.uploadMessageForJob(uploadJob);
+        const uploadJob: Job = R.head(uploadJobs)!;
+        const uploadFilesJob: UploadFilesJob = UploadPlanParser.mapUploadFilesJob(uploadJob);
 
-        return localFileUploadHandler.doLocalFileUpload(uploadMessage)
+        return localFileUploadHandler.doLocalFileUpload(uploadFilesJob)
             .then(() => {
                 return processUploadJobsSequential(R.tail(uploadJobs))
             });
