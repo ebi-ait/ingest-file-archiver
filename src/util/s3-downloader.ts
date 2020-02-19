@@ -4,7 +4,9 @@ import {promises as fsPromises} from "fs";
 import IFileDownloader from "./file-downloader";
 import {DownloadFile, DownloadFilesJob} from "../common/types";
 import * as stream from "stream";
-import * as https from "https";
+import * as aws from "aws-sdk"
+import {GetObjectRequest} from "aws-sdk/clients/s3";
+import {Readable} from "stream";
 
 class S3Downloader implements IFileDownloader {
     config: AWS.Config;
@@ -16,7 +18,7 @@ class S3Downloader implements IFileDownloader {
         const workingDir = this.assertWorkingDirectory(downloadJob.basePath, downloadJob.container);
 
         let filePromises: Promise<string>[] = [];
-        downloadJob.files.forEach((file) => filePromises.push(this.assertFie(workingDir, file)));
+        downloadJob.files.forEach((file) => filePromises.push(this.assertFile(workingDir, file)));
         return new Promise<void>((resolve, reject) =>
             Promise.all(filePromises)
             .then(() => resolve())
@@ -32,15 +34,15 @@ class S3Downloader implements IFileDownloader {
         return workingDir;
     }
 
-    assertFie(workingDir: string, downloadFile: DownloadFile): Promise<string> {
-        const file_path = workingDir + '/' + downloadFile.fileName;
+    assertFile(workingDir: string, downloadFile: DownloadFile): Promise<string> {
+        const filePath = workingDir + '/' + downloadFile.fileName;
         return new Promise<string>((resolve, reject) => {
-            this.fileExists(file_path)
+            this.fileExists(filePath)
                 .then(fileExists => {
                     if (fileExists) {
-                        resolve(file_path);
+                        resolve(filePath);
                     } else {
-                        this.downloadFile(file_path, new URL (downloadFile.source)).then(() => resolve(file_path))
+                        this.downloadFile(filePath, new URL (downloadFile.source)).then(() => resolve(filePath))
                     }
                 })
                 .catch(error => reject(error));
@@ -62,17 +64,23 @@ class S3Downloader implements IFileDownloader {
 
     downloadFile(filePath: string, s3Location: URL): Promise<void> {
         return this.fetchS3(s3Location)
-            .then((readStream) => {
-                return fsPromises.writeFile(filePath, readStream);
-            });
+            .then((readStream) => {return fsPromises.writeFile(filePath, readStream)})
     }
 
     fetchS3(s3Url: URL): Promise<stream.Readable> {
-        //ToDo: Not actually how to get an S3 file
-        return new Promise<stream.Readable>(((resolve) => {
-            https.get(s3Url, (res: stream.Readable) => {
-                resolve(res);
+        const getObjRequest: GetObjectRequest = {
+            Bucket: s3Url.host,
+            Key: s3Url.pathname
+        };
+
+        return new Promise<stream.Readable>((resolve, reject) => {
+            new aws.S3(this.config).getObject(getObjRequest, (err, data) => {
+                if(err){
+                    reject(err);
+                } else{
+                    resolve(data.Body as Readable);
+                }
             });
-        }));
+        });
     }
 }
