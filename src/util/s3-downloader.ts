@@ -37,7 +37,7 @@ class S3Downloader implements IFileDownloader {
     assertFile(workingDir: string, downloadFile: DownloadFile): Promise<string> {
         const filePath = workingDir + '/' + downloadFile.fileName;
         return new Promise<string>((resolve, reject) => {
-            this.fileExists(filePath)
+            S3Downloader.fileExists(filePath)
                 .then(fileExists => {
                     if (fileExists) {
                         resolve(filePath);
@@ -49,7 +49,7 @@ class S3Downloader implements IFileDownloader {
         });
     }
 
-    fileExists(file: PathLike): Promise<boolean> {
+    static fileExists(file: PathLike): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             fsPromises.stat(file)
                 .then((stats) => {
@@ -68,13 +68,9 @@ class S3Downloader implements IFileDownloader {
     }
 
     fetchS3(s3Url: URL): Promise<stream.Readable> {
-        const getObjRequest: GetObjectRequest = {
-            Bucket: s3Url.host,
-            Key: s3Url.pathname
-        };
-
         return new Promise<stream.Readable>((resolve, reject) => {
-            new aws.S3(this.config).getObject(getObjRequest, (err, data) => {
+            const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
+            new aws.S3(this.config).getObject(s3ObjectRequest, (err, data) => {
                 if(err){
                     reject(err);
                 } else{
@@ -83,4 +79,14 @@ class S3Downloader implements IFileDownloader {
             });
         });
     }
+
+    static s3ObjectRequest(s3Url: URL): GetObjectRequest {
+        return {
+            Bucket: s3Url.host,
+            Key: s3Url.pathname.substr(1)
+        };
+    }
+
 }
+
+export default S3Downloader;
