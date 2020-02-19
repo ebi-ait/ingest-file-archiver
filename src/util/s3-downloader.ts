@@ -9,11 +9,6 @@ import {GetObjectRequest} from "aws-sdk/clients/s3";
 import {Readable} from "stream";
 
 class S3Downloader implements IFileDownloader {
-    config: AWS.Config;
-    constructor(awsConfig: AWS.Config) {
-        this.config = awsConfig;
-    }
-
     assertFiles(downloadJob: DownloadFilesJob): Promise<void> {
         const workingDir = this.assertWorkingDirectory(downloadJob.basePath, downloadJob.container);
 
@@ -42,7 +37,9 @@ class S3Downloader implements IFileDownloader {
                     if (fileExists) {
                         resolve(filePath);
                     } else {
-                        this.downloadFile(filePath, new URL (downloadFile.source)).then(() => resolve(filePath))
+                        this.getS3Stream(downloadFile.source)
+                            .then((readStream) => {return fsPromises.writeFile(filePath, readStream)})
+                            .then(() => resolve(filePath))
                     }
                 })
                 .catch(error => reject(error));
@@ -62,15 +59,10 @@ class S3Downloader implements IFileDownloader {
         });
     }
 
-    downloadFile(filePath: string, s3Location: URL): Promise<void> {
-        return this.fetchS3(s3Location)
-            .then((readStream) => {return fsPromises.writeFile(filePath, readStream)})
-    }
-
-    fetchS3(s3Url: URL): Promise<stream.Readable> {
+    getS3Stream(s3Url: string): Promise<stream.Readable> {
         return new Promise<stream.Readable>((resolve, reject) => {
             const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
-            new aws.S3(this.config).getObject(s3ObjectRequest, (err, data) => {
+            new aws.S3().getObject(s3ObjectRequest, (err, data) => {
                 if(err){
                     reject(err);
                 } else{
@@ -80,10 +72,11 @@ class S3Downloader implements IFileDownloader {
         });
     }
 
-    static s3ObjectRequest(s3Url: URL): GetObjectRequest {
+    static s3ObjectRequest(s3Url: string): GetObjectRequest {
+        const url = new URL(s3Url);
         return {
-            Bucket: s3Url.host,
-            Key: s3Url.pathname.substr(1)
+            Bucket: url.host,
+            Key: url.pathname.substr(1)
         };
     }
 

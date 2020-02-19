@@ -28,6 +28,7 @@
     "@types/request": "^2.47.1",
     "@types/request-promise": "^4.1.42",
     "@types/tus-js-client": "^1.4.1",
+    "aws-sdk-mock": "^5.0.0",
     "axios": ">=0.18.1",
     "braces": ">=2.3.1",
     "handlebars": "^4.7.3",
