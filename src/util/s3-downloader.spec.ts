@@ -5,6 +5,7 @@ import {PathLike, promises as fsPromises} from "fs";
 import {Readable} from "stream";
 import * as TypeMoq from "typemoq";
 import {PromiseResult} from "aws-sdk/lib/request";
+import {Times} from "typemoq/Api/Times";
 
 const writeMockFile = (mockFilePath: PathLike, mockFileContent: string) => {
     return fsPromises.writeFile(mockFilePath, mockFileContent);
@@ -87,10 +88,11 @@ describe("S3 downloader tests", () => {
 
         s3Downloader.assertFile("mocks", {fileName: "assert-file.txt", source: mockS3Url})
             .then((filePath) => {
-                fsPromises.readFile(filePath).then((data) => expect(data).toEqual(Buffer.from(exampleText)));
-                return filePath;
-            })
-            .then((filePath) => fsPromises.unlink(filePath))
-            .then(() => done())
+                fsPromises.readFile(filePath).then((data) => {
+                    mockS3ClientFactory.verify(mockObj => mockObj.getObject(TypeMoq.It.isAny), Times.atLeastOnce());
+                    expect(data).toEqual(Buffer.from(exampleText));
+                    fsPromises.unlink(filePath).then(() => done());
+                });
+            });
     });
 });
