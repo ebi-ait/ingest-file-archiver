@@ -53,7 +53,6 @@ describe("S3 downloader tests", () => {
 
         const s3Downloader: S3Downloader = new S3Downloader(mockS3Client.object);
 
-
         mockStream.push("Hello World!");
         mockStream.push(null);
 
@@ -72,6 +71,38 @@ describe("S3 downloader tests", () => {
             }).then(streamResults => {
                 expect(streamResults).toBe("Hello World!");
                 done();
+            });
+    });
+
+    it("should ensure to download a file from S3 if the file doesn't exist in local storage", done => {
+        const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
+        const mockStream: Readable = new Readable();
+        mockStream._read = () => {};
+
+        const mockObjectContent: GetObjectOutput = {
+            Body: mockStream
+        };
+
+        const mockS3Client: TypeMoq.IMock<S3> = TypeMoq.Mock.ofType<S3>();
+
+        mockS3Client
+            .setup(mockInstance => mockInstance.getObject(TypeMoq.It.isAny(), TypeMoq.It.isAny()))
+            .callback((params, callback:any) => callback(null, mockObjectContent))
+            .returns(() => {
+                return TypeMoq.Mock.ofType<AWS.Request<GetObjectOutput, AWSError>>().object;
+            });
+
+        const s3Downloader: S3Downloader = new S3Downloader(mockS3Client.object);
+
+        mockStream.push("Hello World!");
+        mockStream.push(null);
+
+        s3Downloader.assertFile("./", {fileName: "mock-file.txt", source: mockS3Url})
+            .then((filePath) => {
+                fsPromises.readFile(filePath).then((data) => {
+                    expect(data).toEqual(Buffer.from("Hello World!"));
+                    done();
+                })
             });
     });
 });

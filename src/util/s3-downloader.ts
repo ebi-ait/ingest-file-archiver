@@ -43,7 +43,17 @@ class S3Downloader implements IFileDownloader {
                         resolve(filePath);
                     } else {
                         this.getS3Stream(downloadFile.source)
-                            .then((readStream) => {return fsPromises.writeFile(filePath, readStream)})
+                            .then((readStream) => {
+                                return new Promise<void>((resolve, reject) => {
+                                    readStream.pipe(fs.createWriteStream(filePath))
+                                        .on("end", () => {
+                                            resolve();
+                                        })
+                                        .on("error", (err) => {
+                                            reject(err);
+                                        });
+                                });
+                            })
                             .then(() => resolve(filePath))
                     }
                 })
