@@ -11,23 +11,25 @@ const writeMockFile = (mockFilePath: PathLike, mockFileContent: string) => {
 
 describe("S3 downloader tests", () => {
 
-    it("should parse Buckets and Key from s3 URLs", () => {
+    it("should parse Buckets and Key from s3 URLs", done => {
         const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
         const mockS3ObjectRequest = S3Downloader.s3ObjectRequest(mockS3Url);
 
         expect(mockS3ObjectRequest.Bucket).toBe("mock-bucket");
         expect(mockS3ObjectRequest.Key).toBe("mock-dir/mock-file.txt");
+        done();
     });
 
-    it("should check if a file exists", () => {
+    it("should check if a file exists", done => {
         const mockFileContent = "Hello World!";
         const mockFilePath = "mockfile.txt";
 
         writeMockFile(mockFilePath, mockFileContent)
             .then(() => S3Downloader.fileExists(mockFilePath))
-            .then(exists => expect(exists).toBeTruthy())
-            .then(() => {
-                fsPromises.unlink(mockFilePath)
+            .then(exists => {
+                expect(exists).toBeTruthy();
+                fsPromises.unlink(mockFilePath);
+                done();
             });
     });
 
