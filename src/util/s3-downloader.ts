@@ -67,14 +67,13 @@ class S3Downloader implements IFileDownloader {
     getS3Stream(s3Url: string): Promise<stream.Readable> {
         return new Promise<stream.Readable>((resolve, reject) => {
             const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
-            const pr = this.s3Instance.getObject(s3ObjectRequest, (err, data) => {
+            this.s3Instance.getObject(s3ObjectRequest, (err, data) => {
                 if(err){
                     reject(err);
                 } else{
                     resolve(data.Body as Readable);
                 }
             });
-            const x = 1;
         });
     }
 
