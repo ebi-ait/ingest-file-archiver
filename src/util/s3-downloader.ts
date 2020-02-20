@@ -54,8 +54,13 @@ class S3Downloader implements IFileDownloader {
 
     private WriteFile(readStream: stream.Readable, filePath: string) {
         return new Promise<void>((resolve, reject) => {
-            readStream.pipe(fs.createWriteStream(filePath))
-                .on("end", () => resolve())
+            const writeStream = fs.createWriteStream(filePath);
+            readStream.pipe(writeStream);
+            readStream
+                .on("end", () => {
+                    writeStream.end();
+                    resolve();
+                })
                 .on("error", (err) => reject(err));
         });
     }

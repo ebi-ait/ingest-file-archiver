@@ -87,13 +87,10 @@ describe("S3 downloader tests", () => {
 
         s3Downloader.assertFile("mocks", {fileName: "assert-file.txt", source: mockS3Url})
             .then((filePath) => {
-                fsPromises.readFile(filePath)
-                    .then((data) => {
-                        expect(data).toEqual(Buffer.from(exampleText));
-                    });
-                    return filePath;
+                fsPromises.readFile(filePath).then((data) => expect(data).toEqual(Buffer.from(exampleText)));
+                return filePath;
             })
             .then((filePath) => fsPromises.unlink(filePath))
             .then(() => done())
-    }, 15000);
+    });
 });
