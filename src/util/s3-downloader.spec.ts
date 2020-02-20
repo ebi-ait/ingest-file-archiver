@@ -5,6 +5,7 @@ import {PathLike, promises as fsPromises} from "fs";
 import {Readable} from "stream";
 import * as TypeMoq from "typemoq";
 import {PromiseResult} from "aws-sdk/lib/request";
+import * as fs from "fs";
 
 const writeMockFile = (mockFilePath: PathLike, mockFileContent: string) => {
     return fsPromises.writeFile(mockFilePath, mockFileContent);
@@ -20,6 +21,10 @@ function stringifyStream(stream: Readable) {
 }
 
 describe("S3 downloader tests", () => {
+    beforeAll(() => {
+        if( !fs.existsSync("mocks"))
+            fs.mkdirSync("mocks");
+    });
 
     it("should parse Buckets and Key from s3 URLs", done => {
         const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
