@@ -1,22 +1,15 @@
 import S3Downloader from "./s3-downloader";
-import * as AWSMock from "aws-sdk-mock";
-import * as AWS from "aws-sdk";
+import AWS, {AWSError, S3} from "aws-sdk";
 import {GetObjectOutput, GetObjectRequest} from "aws-sdk/clients/S3";
 import {PathLike, promises, promises as fsPromises} from "fs";
 import {Readable} from "stream";
+import * as TypeMoq from "typemoq";
 
 const writeMockFile = (mockFilePath: PathLike, mockFileContent: string) => {
     return fsPromises.writeFile(mockFilePath, mockFileContent);
 };
 
 describe("S3 downloader tests", () => {
-    beforeAll(() => {
-        AWSMock.setSDKInstance(AWS);
-    });
-
-    afterAll(() => {
-        AWSMock.restore('S3');
-    });
 
     it("should parse Buckets and Key from s3 URLs", () => {
         const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
@@ -38,18 +31,29 @@ describe("S3 downloader tests", () => {
             });
     });
 
-    it('should get read stream from S3', () => {
-        const s3Downloader: S3Downloader = new S3Downloader();
+    it('should get read stream from S3',  done => {
         const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
         const mockStream: Readable = new Readable();
+        mockStream._read = () => {};
+
         const mockObjectContent: GetObjectOutput = {
             Body: mockStream
         };
 
-        AWSMock.mock('S3', 'getObject', (params: GetObjectRequest, callback: Function) => {
-            console.log('S3', 'getObject', 'mock called');
-            callback(null, mockObjectContent);
-        });
+        const mockS3Client: TypeMoq.IMock<S3> = TypeMoq.Mock.ofType<S3>();
+
+        mockS3Client
+            .setup(mockInstance => mockInstance.getObject(TypeMoq.It.isAny(), TypeMoq.It.isAny()))
+            .callback((params, callback:any) => callback(null, mockObjectContent))
+            .returns(() => {
+                return TypeMoq.Mock.ofType<AWS.Request<GetObjectOutput, AWSError>>().object;
+            });
+
+        const s3Downloader: S3Downloader = new S3Downloader(mockS3Client.object);
+
+
+        mockStream.push("Hello World!");
+        mockStream.push(null);
 
         s3Downloader.getS3Stream(mockS3Url)
             .then(stream => {
@@ -63,6 +67,9 @@ describe("S3 downloader tests", () => {
                     });
                     stream.on("error", (error) => reject(error));
                 }));
-            })
+            }).then(streamResults => {
+                expect(streamResults).toBe("Hello World!");
+                done();
+            });
     });
 });

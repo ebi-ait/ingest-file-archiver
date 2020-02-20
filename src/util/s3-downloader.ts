@@ -4,11 +4,16 @@ import {promises as fsPromises} from "fs";
 import IFileDownloader from "./file-downloader";
 import {DownloadFile, DownloadFilesJob} from "../common/types";
 import * as stream from "stream";
-import * as aws from "aws-sdk"
 import {GetObjectRequest} from "aws-sdk/clients/s3";
 import {Readable} from "stream";
+import {S3} from "aws-sdk";
 
 class S3Downloader implements IFileDownloader {
+    s3Instance: S3;
+    constructor(s3Instance: S3) {
+        this.s3Instance = s3Instance;
+    }
+
     assertFiles(downloadJob: DownloadFilesJob): Promise<void> {
         const workingDir = this.assertWorkingDirectory(downloadJob.basePath, downloadJob.container);
 
@@ -62,13 +67,14 @@ class S3Downloader implements IFileDownloader {
     getS3Stream(s3Url: string): Promise<stream.Readable> {
         return new Promise<stream.Readable>((resolve, reject) => {
             const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
-            new aws.S3().getObject(s3ObjectRequest, (err, data) => {
+            const pr = this.s3Instance.getObject(s3ObjectRequest, (err, data) => {
                 if(err){
                     reject(err);
                 } else{
                     resolve(data.Body as Readable);
                 }
             });
+            const x = 1;
         });
     }
 
@@ -80,6 +86,9 @@ class S3Downloader implements IFileDownloader {
         };
     }
 
+    static default() {
+        return new S3Downloader(new S3());
+    }
 }
 
 export default S3Downloader;
