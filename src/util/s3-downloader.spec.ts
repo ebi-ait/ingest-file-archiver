@@ -1,13 +1,23 @@
 import S3Downloader from "./s3-downloader";
-import AWS, {AWSError, S3} from "aws-sdk";
-import {GetObjectOutput, GetObjectRequest} from "aws-sdk/clients/S3";
-import {PathLike, promises, promises as fsPromises} from "fs";
+import {Request, Response, AWSError, S3} from "aws-sdk";
+import {GetObjectOutput} from "aws-sdk/clients/S3";
+import {PathLike, promises as fsPromises} from "fs";
 import {Readable} from "stream";
 import * as TypeMoq from "typemoq";
+import {PromiseResult} from "aws-sdk/lib/request";
 
 const writeMockFile = (mockFilePath: PathLike, mockFileContent: string) => {
     return fsPromises.writeFile(mockFilePath, mockFileContent);
 };
+
+function stringifyStream(stream: Readable) {
+    return new Promise<string>(((resolve, reject) => {
+        let stringResults: string = "";
+        stream.on("data", (chunk) => stringResults += chunk);
+        stream.on("end", () => resolve(stringResults));
+        stream.on("error", (error) => reject(error));
+    }));
+}
 
 describe("S3 downloader tests", () => {
 
@@ -21,88 +31,69 @@ describe("S3 downloader tests", () => {
     });
 
     it("should check if a file exists", done => {
-        const mockFileContent = "Hello World!";
-        const mockFilePath = "mockfile.txt";
+        const mockFileContent = "Hello File!";
+        const mockFilePath = "mocks/file-exists.txt";
 
         writeMockFile(mockFilePath, mockFileContent)
             .then(() => S3Downloader.fileExists(mockFilePath))
-            .then(exists => {
-                expect(exists).toBeTruthy();
-                fsPromises.unlink(mockFilePath);
-                done();
-            });
+            .then(exists => expect(exists).toBeTruthy())
+            .then(() => fsPromises.unlink(mockFilePath))
+            .then(done());
     });
 
-    it('should get read stream from S3',  done => {
-        const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
+    function SetupS3Mock(content: string) {
+        const exampleText = content;
         const mockStream: Readable = new Readable();
-        mockStream._read = () => {};
-
-        const mockObjectContent: GetObjectOutput = {
-            Body: mockStream
+        mockStream._read = () => {
         };
 
-        const mockS3Client: TypeMoq.IMock<S3> = TypeMoq.Mock.ofType<S3>();
+        const mockPromise: PromiseResult<GetObjectOutput, AWSError> = {
+            Body: exampleText,
+            $response: TypeMoq.Mock.ofType<Response<GetObjectOutput, AWSError>>().object
+        };
 
-        mockS3Client
-            .setup(mockInstance => mockInstance.getObject(TypeMoq.It.isAny(), TypeMoq.It.isAny()))
-            .callback((params, callback:any) => callback(null, mockObjectContent))
-            .returns(() => {
-                return TypeMoq.Mock.ofType<AWS.Request<GetObjectOutput, AWSError>>().object;
-            });
+        const mockS3ClientFactory = TypeMoq.Mock.ofType<S3>();
+        const mockResponseFactory = TypeMoq.Mock.ofType<Request<S3.Types.GetObjectOutput, AWSError>>();
 
-        const s3Downloader: S3Downloader = new S3Downloader(mockS3Client.object);
+        mockResponseFactory.setup(m => m.promise()).returns(() => Promise.resolve(mockPromise));
+        mockResponseFactory.setup(m => m.createReadStream()).returns(() => mockStream);
+        mockS3ClientFactory.setup(client => client.getObject(TypeMoq.It.isAny())).returns(() => mockResponseFactory.object);
 
-        mockStream.push("Hello World!");
+        mockStream.push(exampleText);
         mockStream.push(null);
+        return {exampleText, mockS3ClientFactory};
+    }
 
+    it('should get read stream from S3', done => {
+        //Arrange
+        const mockS3Url = "s3://mock-bucket/read-stream/mock-file.txt";
+        const {exampleText, mockS3ClientFactory} = SetupS3Mock("Hello S3 Stream!");
+        const s3Downloader: S3Downloader = new S3Downloader(mockS3ClientFactory.object);
+
+        //Act
         s3Downloader.getS3Stream(mockS3Url)
-            .then(stream => {
-                return new Promise<string>(((resolve, reject) => {
-                    let streamResults: string = "";
-                    stream.on("data", (chunk) => {
-                        streamResults += chunk;
-                    });
-                    stream.on("end", () => {
-                        resolve(streamResults);
-                    });
-                    stream.on("error", (error) => reject(error));
-                }));
-            }).then(streamResults => {
-                expect(streamResults).toBe("Hello World!");
+            .then(stream => stringifyStream(stream))
+            .then(text => {
+                expect(text).toBe(exampleText);
                 done();
             });
     });
 
     it("should ensure to download a file from S3 if the file doesn't exist in local storage", done => {
-        const mockS3Url = "s3://mock-bucket/mock-dir/mock-file.txt";
-        const mockStream: Readable = new Readable();
-        mockStream._read = () => {};
+        const mockS3Url = "s3://mock-bucket/assert-file/mock-file.txt";
+        const {exampleText, mockS3ClientFactory} = SetupS3Mock("Hello S3 File!");
 
-        const mockObjectContent: GetObjectOutput = {
-            Body: mockStream
-        };
+        const s3Downloader: S3Downloader = new S3Downloader(mockS3ClientFactory.object);
 
-        const mockS3Client: TypeMoq.IMock<S3> = TypeMoq.Mock.ofType<S3>();
-
-        mockS3Client
-            .setup(mockInstance => mockInstance.getObject(TypeMoq.It.isAny(), TypeMoq.It.isAny()))
-            .callback((params, callback:any) => callback(null, mockObjectContent))
-            .returns(() => {
-                return TypeMoq.Mock.ofType<AWS.Request<GetObjectOutput, AWSError>>().object;
-            });
-
-        const s3Downloader: S3Downloader = new S3Downloader(mockS3Client.object);
-
-        mockStream.push("Hello World!");
-        mockStream.push(null);
-
-        s3Downloader.assertFile("./", {fileName: "mock-file.txt", source: mockS3Url})
+        s3Downloader.assertFile("mocks", {fileName: "assert-file.txt", source: mockS3Url})
             .then((filePath) => {
-                fsPromises.readFile(filePath).then((data) => {
-                    expect(data).toEqual(Buffer.from("Hello World!"));
-                    done();
-                })
-            });
-    });
+                fsPromises.readFile(filePath)
+                    .then((data) => {
+                        expect(data).toEqual(Buffer.from(exampleText));
+                    });
+                    return filePath;
+            })
+            .then((filePath) => fsPromises.unlink(filePath))
+            .then(() => done())
+    }, 15000);
 });

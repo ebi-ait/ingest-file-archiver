@@ -10,6 +10,7 @@ import {S3} from "aws-sdk";
 
 class S3Downloader implements IFileDownloader {
     s3Instance: S3;
+
     constructor(s3Instance: S3) {
         this.s3Instance = s3Instance;
     }
@@ -21,8 +22,8 @@ class S3Downloader implements IFileDownloader {
         downloadJob.files.forEach((file) => filePromises.push(this.assertFile(workingDir, file)));
         return new Promise<void>((resolve, reject) =>
             Promise.all(filePromises)
-            .then(() => resolve())
-            .catch(() => reject())
+                .then(() => resolve())
+                .catch(() => reject())
         );
     }
 
@@ -43,21 +44,19 @@ class S3Downloader implements IFileDownloader {
                         resolve(filePath);
                     } else {
                         this.getS3Stream(downloadFile.source)
-                            .then((readStream) => {
-                                return new Promise<void>((resolve, reject) => {
-                                    readStream.pipe(fs.createWriteStream(filePath))
-                                        .on("end", () => {
-                                            resolve();
-                                        })
-                                        .on("error", (err) => {
-                                            reject(err);
-                                        });
-                                });
-                            })
+                            .then((readStream) => this.WriteFile(readStream, filePath))
                             .then(() => resolve(filePath))
                     }
                 })
                 .catch(error => reject(error));
+        });
+    }
+
+    private WriteFile(readStream: stream.Readable, filePath: string) {
+        return new Promise<void>((resolve, reject) => {
+            readStream.pipe(fs.createWriteStream(filePath))
+                .on("end", () => resolve())
+                .on("error", (err) => reject(err));
         });
     }
 
@@ -77,13 +76,10 @@ class S3Downloader implements IFileDownloader {
     getS3Stream(s3Url: string): Promise<stream.Readable> {
         return new Promise<stream.Readable>((resolve, reject) => {
             const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
-            this.s3Instance.getObject(s3ObjectRequest, (err, data) => {
-                if(err){
-                    reject(err);
-                } else{
-                    resolve(data.Body as Readable);
-                }
-            });
+            this.s3Instance.getObject(s3ObjectRequest)
+                .promise()
+                .then(() => resolve(this.s3Instance.getObject().createReadStream()))
+                .catch(error => reject(error));
         });
     }
 
