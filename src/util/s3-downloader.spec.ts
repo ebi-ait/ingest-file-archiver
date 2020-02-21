@@ -100,4 +100,21 @@ describe("S3 downloader tests", () => {
             .then(() => mockS3ClientFactory.verify(mockObj => mockObj.getObject(TypeMoq.It.isAny()), Times.atLeastOnce()))
             .then(() => done());
     });
+
+    it("should not download a file from S3 if the file exists in local storage", done => {
+        const cachedText = "Hello Cached File!";
+        const cachedPath = "mocks/existing-file.txt";
+
+        const mockS3Url = "s3://mock-bucket/assert-file/s3-file.txt";
+        const {mockS3ClientFactory} = SetupS3Mock("Hello S3 File!");
+        const s3Downloader: S3Downloader = new S3Downloader(mockS3ClientFactory.object);
+
+        fsPromises.writeFile(cachedPath,cachedText)
+            .then(() => s3Downloader.assertFile("mocks", {fileName: "existing-file.txt", source: mockS3Url}))
+            .then((filePath) => fsPromises.readFile(filePath))
+            .then((data) => expectBufferToMatchString(data, cachedText))
+            .then(() => mockS3ClientFactory.verify(mockObj => mockObj.getObject(TypeMoq.It.isAny()), Times.never()))
+            .then(() => fsPromises.unlink(cachedPath))
+            .then(() => done());
+    });
 });
