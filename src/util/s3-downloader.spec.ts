@@ -97,7 +97,7 @@ describe("S3 downloader tests", () => {
                     .then((data) => expectBufferToMatchString(data, s3Text))
                     .then(() => fsPromises.unlink(filePath));
             })
-            .then(() => mockS3ClientFactory.verify(mockObj => mockObj.getObject(TypeMoq.It.isAny()), Times.atLeastOnce()))
+            .then(() => mockS3ClientFactory.verify(mockObj => mockObj.getObject(TypeMoq.It.isAny()), Times.exactly(2)))
             .then(() => done());
     });
 

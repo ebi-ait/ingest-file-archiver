@@ -8,7 +8,7 @@ import {GetObjectRequest} from "aws-sdk/clients/s3";
 import {S3} from "aws-sdk";
 
 class S3Downloader implements IFileDownloader {
-    s3Instance: S3;
+    private s3Instance: S3;
 
     constructor(s3Instance: S3) {
         this.s3Instance = s3Instance;
@@ -22,7 +22,7 @@ class S3Downloader implements IFileDownloader {
         return new Promise<void>((resolve, reject) =>
             Promise.all(filePromises)
                 .then(() => resolve())
-                .catch(() => reject())
+                .catch((error) => reject(error))
         );
     }
 
@@ -45,6 +45,7 @@ class S3Downloader implements IFileDownloader {
                         this.getS3Stream(downloadFile.source)
                             .then((readStream) => S3Downloader.writeFile(readStream, filePath))
                             .then(() => resolve(filePath))
+                            .catch(error => reject(error))
                     }
                 })
                 .catch(error => reject(error));
@@ -56,7 +57,7 @@ class S3Downloader implements IFileDownloader {
             const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
             this.s3Instance.getObject(s3ObjectRequest)
                 .promise()
-                .then(() => resolve(this.s3Instance.getObject().createReadStream()))
+                .then(() => resolve(this.s3Instance.getObject(s3ObjectRequest).createReadStream()))
                 .catch(error => reject(error));
         });
     }
