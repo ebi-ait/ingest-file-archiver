@@ -37,7 +37,7 @@ Environment variables for connecting to the RabbitMQ broker:
  In this mode the file-archiver will read a .json file specifying bundles to be archived 
  as well as any necessary fastq->bam conversions.
  
- `docker run -e BASE_DIR=<provide> -e UPLOAD_PLAN_PATH=<provide> -e AAP_USERNAME=<provide> -e AAP_PASSWORD=<provide> -e AAP_URL=<provide> <image id>`
+ `docker run -e BASE_DIR=<provide> -e UPLOAD_PLAN_PATH=<provide> -e AAP_USERNAME=<provide> -e AAP_PASSWORD=<provide> -e AAP_URL=<provide> -e AWS_ACCESS_KEY_ID=<provide> -e AWS_SECRET_ACCESS_KEY=<provide> <image id>`
  
  The bundle-spec .json file should adhere to the following format:
  
@@ -55,6 +55,7 @@ Environment variables for connecting to the RabbitMQ broker:
             "inputs": [{
                 "name": string,
                 "read_index": string
+                "cloud_url": string
             }]
         }
     ]
@@ -74,3 +75,9 @@ Environment variables must be set when running in the mode:
 `UPLOAD_PLAN_PATH`:	Full path of the bundle specification .json
 
 `BASE_DIR`: Full path of the base working directory space for downloading and bam-converting bundle data
+
+`AWS_ACCESS_KEY_ID`: AWS Access Key
+
+`AWS_SECRET_ACCESS_KEY`: AWS Secret Access Key
+
+
