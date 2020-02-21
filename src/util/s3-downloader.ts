@@ -5,7 +5,6 @@ import IFileDownloader from "./file-downloader";
 import {DownloadFile, DownloadFilesJob} from "../common/types";
 import * as stream from "stream";
 import {GetObjectRequest} from "aws-sdk/clients/s3";
-import {Readable} from "stream";
 import {S3} from "aws-sdk";
 
 class S3Downloader implements IFileDownloader {
@@ -44,37 +43,11 @@ class S3Downloader implements IFileDownloader {
                         resolve(filePath);
                     } else {
                         this.getS3Stream(downloadFile.source)
-                            .then((readStream) => this.WriteFile(readStream, filePath))
+                            .then((readStream) => S3Downloader.writeFile(readStream, filePath))
                             .then(() => resolve(filePath))
                     }
                 })
                 .catch(error => reject(error));
-        });
-    }
-
-    private WriteFile(readStream: stream.Readable, filePath: string) {
-        return new Promise<void>((resolve, reject) => {
-            const writeStream = fs.createWriteStream(filePath);
-            readStream.pipe(writeStream);
-            readStream
-                .on("end", () => {
-                    writeStream.end();
-                    resolve();
-                })
-                .on("error", (err) => reject(err));
-        });
-    }
-
-    static fileExists(file: PathLike): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            fsPromises.stat(file)
-                .then((stats) => {
-                    if (stats.isFile()) {
-                        resolve(true)
-                    } else {
-                        reject('Path Exists but is not file.')
-                    }
-                }).catch(() => resolve(false));
         });
     }
 
@@ -88,7 +61,33 @@ class S3Downloader implements IFileDownloader {
         });
     }
 
-    static s3ObjectRequest(s3Url: string): GetObjectRequest {
+    private static writeFile(readStream: stream.Readable, filePath: string) {
+        return new Promise<void>((resolve, reject) => {
+            const writeStream = fs.createWriteStream(filePath);
+            readStream.pipe(writeStream);
+            readStream
+                .on("end", () => {
+                    writeStream.end();
+                    resolve();
+                })
+                .on("error", (err) => reject(err));
+        });
+    }
+
+    private static fileExists(file: PathLike): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            fsPromises.stat(file)
+                .then((stats) => {
+                    if (stats.isFile()) {
+                        resolve(true)
+                    } else {
+                        reject('Path Exists but is not file.')
+                    }
+                }).catch(() => resolve(false));
+        });
+    }
+
+    private static s3ObjectRequest(s3Url: string): GetObjectRequest {
         const url = new URL(s3Url);
         return {
             Bucket: url.host,
