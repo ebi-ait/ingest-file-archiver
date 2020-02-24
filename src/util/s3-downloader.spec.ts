@@ -1,12 +1,12 @@
 import S3Downloader from "./s3-downloader";
 import {Request, Response, AWSError, S3} from "aws-sdk";
-import {GetObjectOutput} from "aws-sdk/clients/S3";
 import {promises as fsPromises} from "fs";
 import {Readable} from "stream";
 import * as TypeMoq from "typemoq";
 import {PromiseResult} from "aws-sdk/lib/request";
 import * as fs from "fs";
 import {Times} from "typemoq";
+import {GetObjectOutput} from "aws-sdk/clients/s3";
 
 function stringifyStream(stream: Readable) {
     return new Promise<string>(((resolve, reject) => {
