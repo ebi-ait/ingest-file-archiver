@@ -38,7 +38,7 @@ namespace ts {
         files: UploadFile[],
         manifestId: string,
         submissionUrl: string,
-        usiUrl: string,
+        dspUrl: string,
         conversionMap? : ConversionMap
     }
 

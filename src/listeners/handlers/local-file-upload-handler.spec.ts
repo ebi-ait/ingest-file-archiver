@@ -31,14 +31,14 @@ describe("Local file uploader tests", () => {
             }
         ];
         const mockSubmissionUuid = "deadbeef-dead-dead-dead-deaddeafbeef";
-        const mockUsiUrl = "https://mock-usi";
-        const mockSubmissionUrl = new url.URL(`${mockUsiUrl}/api/submissions/${mockSubmissionUuid}`);
+        const mockDspUrl = "https://mock-dsp";
+        const mockSubmissionUrl = new url.URL(`${mockDspUrl}/api/submissions/${mockSubmissionUuid}`);
         const mockManifestId = "mock-manifest-id";
         const mockFileBasePathDir = "/data/myfiles";
 
         const mockUploadMessage : UploadFilesJob = {
             files: mockFiles,
-            usiUrl: mockUsiUrl,
+            dspUrl: mockDspUrl,
             submissionUrl: mockSubmissionUrl.toString(),
             manifestId: mockManifestId
         };
@@ -50,7 +50,7 @@ describe("Local file uploader tests", () => {
         uploadRequests.forEach((tusUpload: TusUpload) => {
             expect(tusUpload.fileInfo.filePath).toMatch((new RegExp(`${mockFileBasePathDir}/${mockManifestId}/mockFileName[123]`)));
             expect(tusUpload.submission).toEqual(mockSubmissionUuid);
-            expect(tusUpload.uploadUrl).toEqual(`${mockUsiUrl}/files/`);
+            expect(tusUpload.uploadUrl).toEqual(`${mockDspUrl}/files/`);
             expect(tusUpload.fileInfo.fileName).toMatch(new RegExp("mockFileName[123]"));
         });
     });

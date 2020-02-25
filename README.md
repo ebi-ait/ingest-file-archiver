@@ -45,7 +45,7 @@ Environment variables for connecting to the RabbitMQ broker:
 ```metadata json
 {
     "jobs": [
-        "usi_api_url": string,
+        "dsp_api_url": string,
         "ingest_api_url": string,
         "submission_url": string,
         "files": string[],
