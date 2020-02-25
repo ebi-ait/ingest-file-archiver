@@ -19,11 +19,7 @@ class S3Downloader implements IFileDownloader {
 
         let filePromises: Promise<string>[] = [];
         downloadJob.files.forEach((file) => filePromises.push(this.assertFile(workingDir, file)));
-        return new Promise<void>((resolve, reject) =>
-            Promise.all(filePromises)
-                .then(() => resolve())
-                .catch((error) => reject(error))
-        );
+        return Promise.all(filePromises).return();
     }
 
     assertWorkingDirectory(basePath: string, container: string): string {
@@ -36,20 +32,13 @@ class S3Downloader implements IFileDownloader {
 
     assertFile(workingDir: string, downloadFile: DownloadFile): Promise<string> {
         const filePath = workingDir + '/' + downloadFile.fileName;
-        return new Promise<string>((resolve, reject) => {
-            S3Downloader.fileExists(filePath)
-                .then(fileExists => {
-                    if (fileExists) {
-                        resolve(filePath);
-                    } else {
-                        this.getS3Stream(downloadFile.source)
-                            .then((readStream) => S3Downloader.writeFile(readStream, filePath))
-                            .then(() => resolve(filePath))
-                            .catch(error => reject(error))
-                    }
-                })
-                .catch(error => reject(error));
-        });
+        if (fs.existsSync(filePath)) {
+            return Promise.resolve(filePath);
+        } else {
+            return this.getS3Stream(downloadFile.source)
+                .then((readStream) => S3Downloader.writeFile(readStream, filePath))
+                .return(filePath)
+        }
     }
 
     getS3Stream(s3Url: string): Promise<stream.Readable> {
@@ -72,19 +61,6 @@ class S3Downloader implements IFileDownloader {
                     resolve();
                 })
                 .on("error", (err) => reject(err));
-        });
-    }
-
-    private static fileExists(file: PathLike): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            fsPromises.stat(file)
-                .then((stats) => {
-                    if (stats.isFile()) {
-                        resolve(true)
-                    } else {
-                        reject('Path Exists but is not file.')
-                    }
-                }).catch(() => resolve(false));
         });
     }
 

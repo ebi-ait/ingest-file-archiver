@@ -17,16 +17,12 @@ class AapTokenClient implements ITokenClient {
      * Retrieves a token from AAP using HTTP Authentication with a username and password
      */
     retrieveToken() : Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            request({
+        return request({
                 method: "GET",
                 url: this.authUrl,
                 auth: this.aapCredentials
-            })
-                .then(resp => resolve(resp))
-                .catch(error => reject(error));
-            });
-        };
+            }).then((response:string) => Promise.resolve(response))
+    }
 }
 
 export default AapTokenClient;

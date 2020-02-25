@@ -20,18 +20,14 @@ class UsiClient {
 
     retrieve(resourceUrl: string) : Promise<any> {
         return this.tokenManager.getToken().then(token => {
-            return new Promise<any>((resolve, reject) => {
-                request({
-                    url: resourceUrl,
-                    method: "GET",
-                    json: true,
-                    headers : {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-                    .then(resp => resolve(resp))
-                    .catch(error => reject(error));
-            });
+            return request({
+                url: resourceUrl,
+                method: "GET",
+                json: true,
+                headers : {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then(resp => Promise.resolve(resp));
         });
     }
 

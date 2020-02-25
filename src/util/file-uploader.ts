@@ -11,6 +11,7 @@ import {RequestOptions} from "https";
 import {S3TusUpload} from "../model/s3-tus-upload";
 import {AlreadyUploaded, S3Auth, UploadAssertion} from "../common/types";
 import UsiClient from "./usi-client";
+import {Readable} from "stream";
 
 /**
  *
@@ -44,21 +45,17 @@ class FileUploader {
     stageS3File(s3TusUpload: S3TusUpload) : Promise<tus.Upload> {
         const bucket = s3TusUpload.s3Info.s3Location.s3Bucket;
         const key = s3TusUpload.s3Info.s3Location.s3Bucket!;
-
-        return new Promise((resolve, reject) => {
-            const requestReadablePromise = this.fetchS3(s3TusUpload.s3Info.s3Location.s3Url!);
-            requestReadablePromise.then(requestReadable => {
-               s3TusUpload.tusUpload.fileInfo.fileStream = requestReadable;
-                this.doUpload(s3TusUpload.tusUpload).then(upload => {resolve(upload)});
-            });
-        });
+        return this.fetchS3(s3TusUpload.s3Info.s3Location.s3Url!)
+            .then(requestReadable => {
+                s3TusUpload.tusUpload.fileInfo.fileStream = requestReadable;
+                return this.doUpload(s3TusUpload.tusUpload)
+            })
+            .then(upload => Promise.resolve(upload))
     }
 
     fetchS3(s3Url: URL) : Promise<stream.Readable> {
-        return new Promise<stream.Readable>(((resolve, reject) => {
-            https.get(s3Url, (res: stream.Readable) => {
-                resolve(res);
-            });
+        return new Promise<stream.Readable>(((resolve) => {
+            https.get(s3Url, (response: stream.Readable) => resolve(response));
         }));
     }
 
@@ -66,21 +63,16 @@ class FileUploader {
         const submissionId = tusUpload.submission!;
         const fileName = tusUpload.fileInfo.fileName;
         const usiClient = new UsiClient(tusUpload.usiUrl!, this.tokenManager);
-
-        return new Promise<UploadAssertion>((resolve, reject) => {
-            usiClient.checkFileAlreadyUploaded(submissionId, fileName).then((isUploaded:boolean) => {
+        return usiClient.checkFileAlreadyUploaded(submissionId, fileName)
+            .then(isUploaded => {
                 if(isUploaded) {
                     const alreadyUploaded: UploadAssertion = "ALREADY_UPLOADED";
-                    console.log(`File with name ${tusUpload.fileInfo.fileName} has already been uploaded for submission ${tusUpload.submission}`);
-                    resolve(alreadyUploaded);
+                    console.log(`File with name ${fileName} has already been uploaded for submission ${submissionId}`);
+                    return Promise.resolve(alreadyUploaded);
                 } else {
-                    this.stageLocalFile(tusUpload).then((upload: UploadAssertion) => {
-                        resolve(upload);
-                    });
+                    return this.stageLocalFile(tusUpload).then((upload: UploadAssertion) => Promise.resolve(upload));
                 }
             });
-        });
-
     }
 
     /**

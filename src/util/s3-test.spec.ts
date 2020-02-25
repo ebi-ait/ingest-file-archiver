@@ -5,14 +5,12 @@ import {PathLike, promises as fsPromises} from "fs";
 import * as fs from "fs";
 
 function expectFilesToMatch(actualFilePath: PathLike, exampleFilePath: PathLike): Promise<PathLike> {
-    return new Promise<PathLike>(((resolve, reject) => {
-        fsPromises.readFile(actualFilePath, "utf8")
-            .then(actualContent => {
-                fsPromises.readFile(exampleFilePath, "utf8")
-                    .then(exampleContent => expect(actualContent).toMatch(exampleContent))
-                    .then(() => resolve(actualFilePath))
-            });
-    }));
+    return fsPromises.readFile(actualFilePath, "utf8")
+        .then(actualContent =>
+            fsPromises.readFile(exampleFilePath, "utf8")
+                .then(exampleContent => expect(actualContent).toMatch(exampleContent))
+                .then(() => Promise.resolve())
+        ).then(() => Promise.resolve(actualFilePath));
 }
 
 function deleteFolderRecursive(path: string) {

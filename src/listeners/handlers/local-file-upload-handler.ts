@@ -30,10 +30,7 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     handle(msg: AmqpMessage) : Promise<void> {
-            return new Promise<void>(() => {
-                LocalFileUploadHandler._parseAmqpMessage(msg)
-                    .then((msgContent) => {return this.doLocalFileUpload(msgContent)});
-            });
+            return LocalFileUploadHandler._parseAmqpMessage(msg).then(msgContent =>  this.doLocalFileUpload(msgContent));
     }
 
     doLocalFileUpload(job: UploadFilesJob): Promise<void>{
@@ -44,9 +41,9 @@ class LocalFileUploadHandler implements IHandler {
         };
 
         return LocalFileUploadHandler._maybeDownloadFiles(downloadJob, this.fileDownloader)
-            .then(() => { return LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter)})
-            .then(() => { return LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath)})
-            .then(() => { return Promise.resolve()});
+            .then(() => LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter))
+            .then(() => LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath))
+            .return()
     }
 
     static _convertUploadFiles(uploadFiles: UploadFile[] ): DownloadFile[] {
@@ -84,17 +81,16 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     static _doBamConversion(fastq2BamConverter: Fastq2BamConverter, bamConvertRequest: Fastq2BamConvertRequest) : Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            fastq2BamConverter.assertBam(bamConvertRequest)
-                .then((exitCode: number) => {
-                    if(exitCode === 0) {
-                        resolve();
-                    } else {
-                        console.error("ERROR: fastq2Bam converter returned non-successful error code: " + String(exitCode));
-                        reject();
-                    }
-                })
-        });
+        return fastq2BamConverter.assertBam(bamConvertRequest)
+            .then((exitCode: number) => {
+                if(exitCode === 0) {
+                    return Promise.resolve();
+                } else {
+                    const error = "ERROR: fastq2Bam converter returned non-successful error code: " + String(exitCode)
+                    console.error(error);
+                    return Promise.reject(error);
+                }
+            });
     }
 
     static _generateBamConvertRequest(uploadMessageConversionMap: ConversionMap, fileDirBasePath: string) : Fastq2BamConvertRequest {

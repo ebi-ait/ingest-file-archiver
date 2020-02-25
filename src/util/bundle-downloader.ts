@@ -31,24 +31,21 @@ class BundleDownloader implements IFileDownloader {
      * @param bundleBaseDir
      */
     _assertBundle(bundleUuid: string, bundleBaseDir: string): Promise<void> {
-        return new Promise<void>((resolve) => {
-            BundleDownloader._checkBundleExists(bundleUuid, bundleBaseDir)
-                .then((itExists) => {
-                    if (itExists) {
-                        console.log(`Bundle with uuid ${bundleUuid} already exists at ${bundleBaseDir}`);
-                        resolve();
-                    } else {
-                        console.log(`Downloading bundle with uuid ${bundleUuid}`);
-                        const bundleDownloadRequest: BundleDownloadRequest = {
-                            bundleUuid: bundleUuid,
-                            cloudReplica: "aws",
-                            bundleBaseDir: bundleBaseDir
-                        };
-                        BundleDownloader._downloadBundle(this.hcaCliPath, bundleDownloadRequest)
-                            .then(() => resolve());
-                    }
-                })
-        });
+        return BundleDownloader._checkBundleExists(bundleUuid, bundleBaseDir)
+            .then((itExists) => {
+                if (itExists) {
+                    console.log(`Bundle with uuid ${bundleUuid} already exists at ${bundleBaseDir}`);
+                    return Promise.resolve();
+                } else {
+                    console.log(`Downloading bundle with uuid ${bundleUuid}`);
+                    const bundleDownloadRequest: BundleDownloadRequest = {
+                        bundleUuid: bundleUuid,
+                        cloudReplica: "aws",
+                        bundleBaseDir: bundleBaseDir
+                    };
+                    return BundleDownloader._downloadBundle(this.hcaCliPath, bundleDownloadRequest).return();
+                }
+            });
     }
 
     static _downloadBundle(hcaCliPath: string, bundleDownloadRequest: BundleDownloadRequest) : Promise<void> {

@@ -20,12 +20,9 @@ class TokenManager {
         if(this.tokenCache.token && ! this.isExpired()) {
             return Promise.resolve<string>(this.tokenCache.token!);
         } else {
-            return new Promise((resolve, reject) => {
-                this.aapTokenClient.retrieveToken()
-                    .then(token => {return this.cacheToken(token)})
-                    .then(token => {return resolve(token)})
-                    .catch(err => reject(err));
-            });
+            return this.aapTokenClient.retrieveToken()
+                .then(token => {return this.cacheToken(token)})
+                .then(token => {return Promise.resolve(token)});
         }
     }
 
