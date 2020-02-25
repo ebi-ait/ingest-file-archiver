@@ -3,7 +3,7 @@ Service for storing HCA sequencing data in the EBI archives.
 
 ## Setup
 
-Requires NodeJS version 8.0+
+Requires NodeJS version 13.8.0
 
 Run `npm install`
 
@@ -48,7 +48,11 @@ Environment variables for connecting to the RabbitMQ broker:
         "dsp_api_url": string,
         "ingest_api_url": string,
         "submission_url": string,
-        "files": string[],
+        "files": [{
+            "name": string,
+            "read_index": string
+            "cloud_url": string
+        }],
         "manifest_id": string,
         "conversion": {
             "output_name": string,
