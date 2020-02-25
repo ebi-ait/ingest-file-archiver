@@ -1,6 +1,6 @@
 {
   "name": "ingest-file-archiver",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "private": true,
   "dependencies": {
     "amqplib": "^0.5.2",
@@ -30,6 +30,7 @@
     "braces": ">=2.3.1",
     "handlebars": "^4.7.3",
     "jest": "^25.1.0",
+    "ts-jest": "^25.2.1",
     "js-yaml": ">=3.13.1",
     "lodash": ">=4.17.13",
     "mem": ">=4.0.0",

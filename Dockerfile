@@ -1,7 +1,7 @@
 FROM node
 
 WORKDIR /app
-COPY app.ts package.json tsconfig.json ./
+COPY app.ts package*.json tsconfig.json ./
 ADD fastq ./fastq
 ADD src ./src
 ADD config ./config
