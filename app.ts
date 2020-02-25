@@ -16,6 +16,8 @@ import R from "ramda";
 import Promise from "bluebird";
 import TokenManager from "./src/util/token-manager";
 import UploadPlanParser from "./src/util/upload-plan-parser";
+import IFileDownloader from "./src/util/file-downloader";
+import S3Downloader from "./src/util/s3-downloader";
 /* ----------------------------------- */
 
 const tokenClient = (() => {
@@ -37,8 +39,8 @@ const fastq2BamConverter = (() => {
     return new Fastq2BamConverter("/app/fastq/bin/fastq2bam");
 })();
 
-const bundleDownloader = (() => {
-    return new BundleDownloader("hca");
+const fileDownloader: IFileDownloader = (() => {
+    return S3Downloader.default();
 })();
 
 const dirBasePath = (() => {
@@ -46,11 +48,16 @@ const dirBasePath = (() => {
 })();
 
 const localFileUploadHandler = (() => {
-    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, bundleDownloader, dirBasePath);
+    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, fileDownloader, dirBasePath);
 })();
 
 
 const uploadPlanFilePath: string = config.get("FILES.uploadPlanPath");
+if (! fs.existsSync(uploadPlanFilePath)) {
+    console.error("Error UPLOAD_PLAN_PATH does not exist: " + uploadPlanFilePath);
+    process.exit(1)
+}
+
 const uploadPlanFileData: Buffer = fs.readFileSync(uploadPlanFilePath);
 const uploadPlan: Plan = JSON.parse(uploadPlanFileData.toString());
 
