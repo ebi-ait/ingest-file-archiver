@@ -122,7 +122,7 @@ namespace ts {
     }
 
     export type Job = {
-        usi_api_url: string,
+        dsp_api_url: string,
         ingest_api_url: string,
         submission_url: string,
         files: UploadFile[],

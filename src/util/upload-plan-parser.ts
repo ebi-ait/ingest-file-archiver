@@ -8,7 +8,7 @@ class UploadPlanParser {
             manifestId: uploadJob.manifest_id,
             submissionUrl: uploadJob.submission_url,
             files: uploadJob.files,
-            usiUrl: uploadJob.usi_api_url,
+            usiUrl: uploadJob.dsp_api_url,
             conversionMap: uploadJob.conversion ? UploadPlanParser.parseConversionMap(uploadJob.conversion) : undefined
         }
     }
