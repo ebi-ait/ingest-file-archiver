@@ -3,12 +3,11 @@ Service for storing HCA sequencing data in the EBI archives.
 
 ## Running with Upload Plan
 This default mode the file-archiver will read a .json file specifying files to be archived.
-As well as any necessary fastq->bam conversions.
 
 ### Running Locally (in Docker)
-Ensure you have a `FILE_UPLOAD_INFO.json` in your working directory:
-
-`docker run -v <local_path>:/data -e BASE_DIR=/data -e UPLOAD_PLAN_PATH=/data/FILE_UPLOAD_INFO.json -e AAP_USERNAME=<provide> -e AAP_PASSWORD=<provide> -e AAP_URL=<provide> -e AWS_ACCESS_KEY_ID=<provide> -e AWS_SECRET_ACCESS_KEY=<provide> <image id>`
+1. Ensure you have a `FILE_UPLOAD_INFO.json` in a local path, which can be obtained from ingest-archiver.
+1. `docker pull quay.io/ebi-ait/ingest-file-archiver`
+1. `docker run -v <local_path>:/data -e BASE_DIR=/data -e UPLOAD_PLAN_PATH=/data/FILE_UPLOAD_INFO.json -e AAP_USERNAME=<provide> -e AAP_PASSWORD=<provide> -e AAP_URL=<provide> -e AWS_ACCESS_KEY_ID=<provide> -e AWS_SECRET_ACCESS_KEY=<provide> quay.io/ebi-ait/ingest-file-archiver`
 
 - `-v <local_path>:/data` Mount a local path as the data directory.
 - `-e ENVIRONMENT=var` Set an environment variable value, listed below.
