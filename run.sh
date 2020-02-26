@@ -1,10 +1,10 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 for param in "$@"
 do
     case $param in
 	-d=*|--base-dir=*)
-	    export BUNDLE_BASE_DIR=${param#*=}
+	    export BASE_DIR=${param#*=}
 	    shift
 	    ;;
 	-f=*|--upload-plan=*)
@@ -23,11 +23,19 @@ do
 	    export AAP_USERNAME=${param#*=}
 	    shift
 	    ;;
+	-a=*|--aws-access-key=*)
+	    export AWS_ACCESS_KEY_ID=${param#*=}
+	    shift
+	    ;;
+	-s=*|--aws-secret-access-key=*)
+	    export AWS_SECRET_ACCESS_KEY=${param#*=}
+	    shift
+	    ;;
     esac
 done
 
-if [ -z ${BUNDLE_BASE_DIR} ] || [ -z ${UPLOAD_PLAN_PATH} ] || [ -z ${AAP_URL} ] || \
-       [ -z ${AAP_USERNAME} ] || [ -z  ${AAP_PASSWORD} ]; then
+if [ -z ${BASE_DIR} ] || [ -z ${UPLOAD_PLAN_PATH} ] || [ -z ${AAP_URL} ] || \
+       [ -z ${AAP_USERNAME} ] || [ -z  ${AAP_PASSWORD} ] || [ -z ${AWS_ACCESS_KEY_ID} ] || [ -z  ${AWS_SECRET_ACCESS_KEY} ]; then
     echo "One of the required parameters is not provided."
     exit 1
 fi

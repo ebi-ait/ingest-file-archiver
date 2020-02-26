@@ -1,14 +1,14 @@
-import {ConversionMap, FileUploadMessage, UploadJob, UploadJobConversion} from "../common/types";
+import {ConversionMap, UploadFilesJob, Job, UploadJobConversion} from "../common/types";
 import R from "ramda";
 
 class UploadPlanParser {
 
-    static uploadMessageForJob(uploadJob: UploadJob): FileUploadMessage {
+    static mapUploadFilesJob(uploadJob: Job): UploadFilesJob {
         return {
-            bundleUuid: uploadJob.bundle_uuid,
+            manifestId: uploadJob.manifest_id,
             submissionUrl: uploadJob.submission_url,
-            fileNames: uploadJob.files,
-            usiUrl: uploadJob.usi_api_url,
+            files: uploadJob.files,
+            dspUrl: uploadJob.dsp_api_url,
             conversionMap: uploadJob.conversion ? UploadPlanParser.parseConversionMap(uploadJob.conversion) : undefined
         }
     }

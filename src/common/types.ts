@@ -23,11 +23,22 @@ namespace ts {
         fileName: string
     }
 
-    export type FileUploadMessage = {
-        fileNames: string[],
-        bundleUuid: string,
+    export type DownloadFile = {
+        fileName: string,
+        source: string
+    }
+
+    export type DownloadFilesJob = {
+        basePath: string,
+        container: string,
+        files: DownloadFile[]
+    }
+
+    export type UploadFilesJob = {
+        files: UploadFile[],
+        manifestId: string,
         submissionUrl: string,
-        usiUrl: string,
+        dspUrl: string,
         conversionMap? : ConversionMap
     }
 
@@ -104,18 +115,23 @@ namespace ts {
             "read_index": string
         }[]
     }
+    export type UploadFile = {
+        name: string,
+        read_index: string,
+        cloud_url: string
+    }
 
-    export type UploadJob = {
-        usi_api_url: string,
+    export type Job = {
+        dsp_api_url: string,
         ingest_api_url: string,
         submission_url: string,
-        files: string[],
-        bundle_uuid: string,
+        files: UploadFile[],
+        manifest_id: string,
         conversion?: UploadJobConversion
     }
 
-    export type UploadPlan = {
-        jobs: UploadJob[]
+    export type Plan = {
+        jobs: Job[]
     }
 
     export type AlreadyUploaded = "ALREADY_UPLOADED";

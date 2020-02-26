@@ -6,11 +6,9 @@ import FileUploader from "./src/util/file-uploader";
 import AapTokenClient from "./src/util/aap-token-client";
 import {
     AAPCredentials,
-    ConversionMap,
-    FileUploadMessage,
-    UploadJob,
-    UploadJobConversion,
-    UploadPlan
+    Job,
+    Plan,
+    UploadFilesJob
 } from "./src/common/types";
 import Fastq2BamConverter from "./src/util/fastq-2-bam-converter";
 import BundleDownloader from "./src/util/bundle-downloader";
@@ -18,9 +16,8 @@ import R from "ramda";
 import Promise from "bluebird";
 import TokenManager from "./src/util/token-manager";
 import UploadPlanParser from "./src/util/upload-plan-parser";
-
-const args = process.argv;
-
+import IFileDownloader from "./src/util/file-downloader";
+import S3Downloader from "./src/util/s3-downloader";
 /* ----------------------------------- */
 
 const tokenClient = (() => {
@@ -42,34 +39,39 @@ const fastq2BamConverter = (() => {
     return new Fastq2BamConverter("/app/fastq/bin/fastq2bam");
 })();
 
-const bundleDownloader = (() => {
-    return new BundleDownloader("hca");
+const fileDownloader: IFileDownloader = (() => {
+    return S3Downloader.default();
 })();
 
-const bundleDirBasePath = (() => {
-    return config.get("FILES.bundleBaseDir") as string;
+const dirBasePath = (() => {
+    return config.get("FILES.baseDir") as string;
 })();
 
 const localFileUploadHandler = (() => {
-    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, bundleDownloader, bundleDirBasePath);
+    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, fileDownloader, dirBasePath);
 })();
 
 
 const uploadPlanFilePath: string = config.get("FILES.uploadPlanPath");
+if (! fs.existsSync(uploadPlanFilePath)) {
+    console.error("Error UPLOAD_PLAN_PATH does not exist: " + uploadPlanFilePath);
+    process.exit(1)
+}
+
 const uploadPlanFileData: Buffer = fs.readFileSync(uploadPlanFilePath);
-const uploadPlan: UploadPlan = JSON.parse(uploadPlanFileData.toString());
+const uploadPlan: Plan = JSON.parse(uploadPlanFileData.toString());
 
 /* ----------------------------------- */
 
-let processUploadJobsSequential: (uploadJobs: UploadJob[]) => Promise<void>;
-processUploadJobsSequential = (uploadJobs: UploadJob[]) : Promise<void> => {
+let processUploadJobsSequential: (uploadJobs: Job[]) => Promise<void>;
+processUploadJobsSequential = (uploadJobs: Job[]) : Promise<void> => {
     if(uploadJobs.length == 0) {
         return Promise.resolve();
     } else {
-        const uploadJob: UploadJob = R.head(uploadJobs)!;
-        const uploadMessage = UploadPlanParser.uploadMessageForJob(uploadJob);
+        const uploadJob: Job = R.head(uploadJobs)!;
+        const uploadFilesJob: UploadFilesJob = UploadPlanParser.mapUploadFilesJob(uploadJob);
 
-        return localFileUploadHandler.doLocalFileUpload(uploadMessage)
+        return localFileUploadHandler.doLocalFileUpload(uploadFilesJob)
             .then(() => {
                 return processUploadJobsSequential(R.tail(uploadJobs))
             });
@@ -79,7 +81,7 @@ processUploadJobsSequential = (uploadJobs: UploadJob[]) : Promise<void> => {
 const start = () => {
     processUploadJobsSequential(uploadPlan.jobs)
         .then(() => {
-            console.log("Finshed");
+            console.log("Finished");
             process.exit(0)
         })
         .catch(error => {

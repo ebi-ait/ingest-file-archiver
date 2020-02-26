@@ -1,6 +1,6 @@
 import LocalFileUploadHandler from "./local-file-upload-handler";
 import * as url from "url";
-import {ConversionMap, Fastq2BamConvertRequest, FileUploadMessage} from "../../common/types";
+import {ConversionMap, UploadFile, UploadFilesJob} from "../../common/types";
 import TusUpload from "../../model/tus-upload";
 
 
@@ -13,18 +13,34 @@ describe("Local file uploader tests", () => {
     });
 
     it("should generate upload requests file upload messages", () => {
-        const mockFileNames = ["mockFileName1", "mockFileName2", "mockFileName3"];
+        const mockFiles : UploadFile[] = [
+            {
+                name: 'mockFileName1',
+                read_index: "read1",
+                cloud_url: "cloud1"
+            },
+            {
+                name: 'mockFileName2',
+                read_index: "read2",
+                cloud_url: "cloud2"
+            },
+            {
+                name: 'mockFileName3',
+                read_index: "read3",
+                cloud_url: "cloud3"
+            }
+        ];
         const mockSubmissionUuid = "deadbeef-dead-dead-dead-deaddeafbeef";
-        const mockUsiUrl = "https://mock-usi";
-        const mockSubmissionUrl = new url.URL(`${mockUsiUrl}/api/submissions/${mockSubmissionUuid}`);
-        const mockBundleUuid = "deadbaaa-dead-dead-dead-deaddeafbaaa";
+        const mockDspUrl = "https://mock-dsp";
+        const mockSubmissionUrl = new url.URL(`${mockDspUrl}/api/submissions/${mockSubmissionUuid}`);
+        const mockManifestId = "mock-manifest-id";
         const mockFileBasePathDir = "/data/myfiles";
 
-        const mockUploadMessage : FileUploadMessage = {
-            fileNames: mockFileNames,
-            usiUrl: mockUsiUrl,
+        const mockUploadMessage : UploadFilesJob = {
+            files: mockFiles,
+            dspUrl: mockDspUrl,
             submissionUrl: mockSubmissionUrl.toString(),
-            bundleUuid: mockBundleUuid
+            manifestId: mockManifestId
         };
 
         const uploadRequests: TusUpload[] = LocalFileUploadHandler._uploadRequestsFromUploadMessage(mockUploadMessage, mockFileBasePathDir);
@@ -32,9 +48,9 @@ describe("Local file uploader tests", () => {
         expect(uploadRequests.length).toBe(3);
 
         uploadRequests.forEach((tusUpload: TusUpload) => {
-            expect(tusUpload.fileInfo.filePath).toMatch((new RegExp(`${mockFileBasePathDir}/${mockBundleUuid}/mockFileName[123]`)));
+            expect(tusUpload.fileInfo.filePath).toMatch((new RegExp(`${mockFileBasePathDir}/${mockManifestId}/mockFileName[123]`)));
             expect(tusUpload.submission).toEqual(mockSubmissionUuid);
-            expect(tusUpload.uploadUrl).toEqual(`${mockUsiUrl}/files/`);
+            expect(tusUpload.uploadUrl).toEqual(`${mockDspUrl}/files/`);
             expect(tusUpload.fileInfo.fileName).toMatch(new RegExp("mockFileName[123]"));
         });
     });
@@ -45,8 +61,8 @@ describe("Local file uploader tests", () => {
         const mockIndex = "mockI.fastq.gz";
 
         const mockOutputName = "mockbam.bam";
-        const mockBundleUuid = "deadbaaa-dead-dead-dead-deaddeafbaaa";
-        const mockFileBasePathDir = `/data/myfiles/${mockBundleUuid}`;
+        const mockManifestId = "mock-manifest-id";
+        const mockFileBasePathDir = `/data/myfiles/${mockManifestId}`;
 
         const mockConversionMapPair: ConversionMap = {
             inputs: [

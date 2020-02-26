@@ -1,6 +1,6 @@
 {
   "FILES": {
-    "bundleBaseDir": "<set through env var>",
+    "baseDir": "<set through env var>",
     "uploadPlanPath": "<set through env var>"
   },
   "AUTH": {

@@ -1,4 +1,4 @@
-FROM node:8-alpine
+FROM node:13.8.0-alpine3.10
 
 WORKDIR /app
 COPY app.ts package*.json tsconfig.json ./
@@ -11,9 +11,6 @@ RUN chmod +x run.sh
 
 RUN npm install
 RUN npm run build-ts
-
-RUN apk update && apk add bash libbz2 xz-dev libffi-dev openssl-dev python3 build-base python3-dev py3-pip
-RUN pip3 install hca
 
 # Required for fastq2bam to find its binaries
 ENV PATH="${PATH}:/app/fastq/bin"

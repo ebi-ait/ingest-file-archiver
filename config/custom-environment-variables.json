@@ -1,6 +1,6 @@
 {
   "FILES": {
-    "bundleBaseDir": "BUNDLE_BASE_DIR",
+    "baseDir": "BASE_DIR",
     "uploadPlanPath": "UPLOAD_PLAN_PATH"
   },
   "AUTH": {
@@ -11,9 +11,9 @@
         "password": "AAP_PASSWORD"
       }
     },
-    "s3": {
-      "accessKeyId": "S3_ACCESS_KEY_ID",
-      "accessKeySecret": "S3_ACCESS_KEY_SECRET"
+    "AWS": {
+      "accessKeyId": "AWS_ACCESS_KEY_ID",
+      "accessKeySecret": "AWS_ACCESS_KEY_SECRET"
     }
   },
   "AMQP": {

@@ -1,75 +1,96 @@
 import Promise from "bluebird";
-import {IHandler, AmqpMessage} from "./handler";
+import {AmqpMessage, IHandler} from "./handler";
 import FileUploader from "../../util/file-uploader";
 import TusUpload from "../../model/tus-upload";
 import url from "url";
-import {ConversionMap, Fastq2BamConvertRequest, FileUploadMessage, UploadAssertion} from "../../common/types";
+import {
+    ConversionMap,
+    DownloadFilesJob,
+    Fastq2BamConvertRequest,
+    UploadFilesJob,
+    UploadAssertion,
+    UploadFile,
+    DownloadFile
+} from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
-import BundleDownloader from "../../util/bundle-downloader";
-import {Upload} from "tus-js-client";
+import IFileDownloader from "../../util/file-downloader";
 
 class LocalFileUploadHandler implements IHandler {
     fileUploader: FileUploader;
     fastq2BamConverter: Fastq2BamConverter;
-    bundleDownloader: BundleDownloader;
-    bundleDirBasePath: string;
+    fileDownloader: IFileDownloader;
+    dirBasePath: string;
 
-    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, bundleDownloader: BundleDownloader, bundleDirBasePath: string) {
+    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, fileDownloader: IFileDownloader, dirBasePath: string) {
         this.fileUploader = fileUploader;
         this.fastq2BamConverter = fastq2BamConverter;
-        this.bundleDownloader = bundleDownloader;
-        this.bundleDirBasePath = bundleDirBasePath;
+        this.fileDownloader = fileDownloader;
+        this.dirBasePath = dirBasePath;
     }
 
     handle(msg: AmqpMessage) : Promise<void> {
-            return new Promise<void>((resolve, reject) => {
-                LocalFileUploadHandler._parseAmqpMessage(msg)
-                    .then((msgContent) => {return this.doLocalFileUpload(msgContent)});
-            });
+            return LocalFileUploadHandler._parseAmqpMessage(msg).then(msgContent =>  this.doLocalFileUpload(msgContent));
     }
 
-    doLocalFileUpload(fileUploadMessage: FileUploadMessage): Promise<void>{
-        return LocalFileUploadHandler._maybeDownloadBundle(fileUploadMessage, this.bundleDirBasePath, this.bundleDownloader)
-            .then(() => { return LocalFileUploadHandler._maybeBamConvert(fileUploadMessage, this.bundleDirBasePath, this.fastq2BamConverter)})
-            .then(() => { return LocalFileUploadHandler._maybeUpload(fileUploadMessage, this.fileUploader, this.bundleDirBasePath)})
-            .then(() => { return Promise.resolve()});
+    doLocalFileUpload(job: UploadFilesJob): Promise<void>{
+        const downloadJob: DownloadFilesJob = {
+            'basePath': this.dirBasePath,
+            'container': job.manifestId,
+            'files': LocalFileUploadHandler._convertUploadFiles(job.files)
+        };
+
+        return LocalFileUploadHandler._maybeDownloadFiles(downloadJob, this.fileDownloader)
+            .then(() => LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter))
+            .then(() => LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath))
+            .return()
     }
 
-    static _parseAmqpMessage(msg: AmqpMessage) : Promise<FileUploadMessage> {
+    static _convertUploadFiles(uploadFiles: UploadFile[] ): DownloadFile[] {
+        let downloadFiles: DownloadFile[] = [];
+        for (let uploadFile of uploadFiles) {
+            let downloadFile : DownloadFile = {
+                'fileName': uploadFile.name,
+                'source': uploadFile.cloud_url,
+            };
+            downloadFiles.push(downloadFile);
+        }
+        return downloadFiles;
+    }
+
+    static _parseAmqpMessage(msg: AmqpMessage) : Promise<UploadFilesJob> {
         try {
-            return Promise.resolve(JSON.parse(msg.messageBytes) as FileUploadMessage);
+            return Promise.resolve(JSON.parse(msg.messageBytes) as UploadFilesJob);
         } catch (err) {
             console.error("Failed to parse message content (ignoring): " + msg.messageBytes);
             return Promise.reject(err);
         }
     }
 
-    static _maybeDownloadBundle(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, bundleDownloader: BundleDownloader): Promise<void> {
-        return bundleDownloader.assertBundle(fileUploadMessage.bundleUuid, fileDirBasePath);
+    static _maybeDownloadFiles(downloadJob: DownloadFilesJob, fileDownloader: IFileDownloader): Promise<void> {
+        return fileDownloader.assertFiles(downloadJob);
     }
 
-    static _maybeBamConvert(fileUploadMessage: FileUploadMessage, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
-        if(! fileUploadMessage.conversionMap) {
+    static _maybeBamConvert(uploadFilesJob: UploadFilesJob, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter) : Promise<void> {
+        if(! uploadFilesJob.conversionMap) {
             return Promise.resolve();
         } else {
-            const bamConvertRequest = LocalFileUploadHandler._generateBamConvertRequest(fileUploadMessage.conversionMap!, `${fileDirBasePath}/${fileUploadMessage.bundleUuid}`);
+            const bamConvertRequest = LocalFileUploadHandler._generateBamConvertRequest(uploadFilesJob.conversionMap!, `${fileDirBasePath}/${uploadFilesJob.manifestId}`);
             return LocalFileUploadHandler._doBamConversion(fastq2BamConverter, bamConvertRequest);
         }
     }
 
     static _doBamConversion(fastq2BamConverter: Fastq2BamConverter, bamConvertRequest: Fastq2BamConvertRequest) : Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            fastq2BamConverter.assertBam(bamConvertRequest)
-                .then((exitCode: number) => {
-                    if(exitCode === 0) {
-                        resolve();
-                    } else {
-                        console.error("ERROR: fastq2Bam converter returned non-successful error code: " + String(exitCode));
-                        reject();
-                    }
-                })
-        });
+        return fastq2BamConverter.assertBam(bamConvertRequest)
+            .then((exitCode: number) => {
+                if(exitCode === 0) {
+                    return Promise.resolve();
+                } else {
+                    const error = "ERROR: fastq2Bam converter returned non-successful error code: " + String(exitCode)
+                    console.error(error);
+                    return Promise.reject(error);
+                }
+            });
     }
 
     static _generateBamConvertRequest(uploadMessageConversionMap: ConversionMap, fileDirBasePath: string) : Fastq2BamConvertRequest {
@@ -80,22 +101,22 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _maybeUpload(fileUploadMessage: FileUploadMessage, fileUploader: FileUploader, fileDirBasePath: string): Promise<UploadAssertion[]> {
-        const tusUploads = LocalFileUploadHandler._uploadRequestsFromUploadMessage(fileUploadMessage, fileDirBasePath);
+    static _maybeUpload(uploadFilesJob: UploadFilesJob, fileUploader: FileUploader, fileDirBasePath: string): Promise<UploadAssertion[]> {
+        const tusUploads = LocalFileUploadHandler._uploadRequestsFromUploadMessage(uploadFilesJob, fileDirBasePath);
         const fn = (tusUpload: TusUpload) => fileUploader.assertFileUpload(tusUpload);
         const uploadPromises = R.map(fn, tusUploads);
         return Promise.all(uploadPromises);
     }
 
-    static _uploadRequestsFromUploadMessage(uploadMessage: FileUploadMessage, fileDirBasePath: string) : TusUpload[] {
+    static _uploadRequestsFromUploadMessage(uploadFilesJob: UploadFilesJob, fileDirBasePath: string) : TusUpload[] {
         const tusUploads: TusUpload[] = [];
-        const uploadFileEndpoint = `${uploadMessage.usiUrl}/files/`;
-        const usiUrl = uploadMessage.usiUrl;
+        const uploadFileEndpoint = `${uploadFilesJob.dspUrl}/files/`;
+        const usiUrl = uploadFilesJob.dspUrl;
 
-        for(let i = 0; i < uploadMessage.fileNames.length; i ++) {
-            const fileName = uploadMessage.fileNames[i];
-            const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadMessage.bundleUuid}/${fileName}`}, uploadFileEndpoint);
-            tusUpload.submission = LocalFileUploadHandler._submissionUuidFromSubmissionUri(new url.URL(uploadMessage.submissionUrl));
+        for(let i = 0; i < uploadFilesJob.files.length; i ++) {
+            const fileName = uploadFilesJob.files[i].name;
+            const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadFilesJob.manifestId}/${fileName}`}, uploadFileEndpoint);
+            tusUpload.submission = LocalFileUploadHandler._submissionUuidFromSubmissionUri(new url.URL(uploadFilesJob.submissionUrl));
             tusUpload.usiUrl = usiUrl;
             tusUploads.push(tusUpload);
         }
