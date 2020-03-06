@@ -1,6 +1,6 @@
 import LocalFileUploadHandler from "./local-file-upload-handler";
 import * as url from "url";
-import {ConversionMap, UploadFile, UploadFilesJob} from "../../common/types";
+import {ConversionMap, FastqReadInfo, UploadFile, UploadFilesJob} from "../../common/types";
 import TusUpload from "../../model/tus-upload";
 
 
@@ -13,21 +13,21 @@ describe("Local file uploader tests", () => {
     });
 
     it("should generate upload requests file upload messages", () => {
-        const mockFiles : UploadFile[] = [
+        const mockFiles : FastqReadInfo[] = [
             {
-                name: 'mockFileName1',
-                read_index: "read1",
-                cloud_url: "cloud1"
+                fileName: 'mockFileName1',
+                readIndex: "read1",
+                cloudUrl: "cloud1"
             },
             {
-                name: 'mockFileName2',
-                read_index: "read2",
-                cloud_url: "cloud2"
+                fileName: 'mockFileName2',
+                readIndex: "read2",
+                cloudUrl: "cloud2"
             },
             {
-                name: 'mockFileName3',
-                read_index: "read3",
-                cloud_url: "cloud3"
+                fileName: 'mockFileName3',
+                readIndex: "read3",
+                cloudUrl: "cloud3"
             }
         ];
         const mockSubmissionUuid = "deadbeef-dead-dead-dead-deaddeafbeef";
@@ -68,15 +68,19 @@ describe("Local file uploader tests", () => {
             inputs: [
                 {
                     readIndex: "read1",
-                    fileName: mockR1
+                    fileName: mockR1,
+                    cloudUrl:'cloudUrl1'
                 },
                 {
                     readIndex: "read2",
                     fileName: mockR2,
+                    cloudUrl:'cloudUrl1'
+
                 },
                 {
                     readIndex: "index1",
-                    fileName: mockIndex
+                    fileName: mockIndex,
+                    cloudUrl:'cloudUrl1'
                 }
             ],
             outputName: mockOutputName

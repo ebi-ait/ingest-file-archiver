@@ -18,15 +18,18 @@ describe("fastq-bam conversion tests", () => {
         reads: [
             {
                 readIndex: "read2",
-                fileName: mockR2Path
+                fileName: mockR2Path,
+                cloudUrl: "cloudUrl1"
             },
             {
                 readIndex: "read1",
-                fileName: mockR1Path
+                fileName: mockR1Path,
+                cloudUrl: "cloudUrl1"
             },
             {
                 readIndex: "index1",
-                fileName: mockIndexPath
+                fileName: mockIndexPath,
+                cloudUrl: "cloudUrl1"
             }
         ],
         outputName: mockOutputName,

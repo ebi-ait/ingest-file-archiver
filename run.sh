@@ -40,5 +40,4 @@ if [ -z ${BASE_DIR} ] || [ -z ${UPLOAD_PLAN_PATH} ] || [ -z ${AAP_URL} ] || \
     exit 1
 fi
 
-cd /app
-node /app/dist/app.js
+node dist/app.js

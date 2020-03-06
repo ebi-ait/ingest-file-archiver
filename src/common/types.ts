@@ -20,7 +20,8 @@ namespace ts {
 
     export type FastqReadInfo = {
         readIndex: string,
-        fileName: string
+        fileName: string,
+        cloudUrl: string
     }
 
     export type DownloadFile = {
@@ -35,7 +36,7 @@ namespace ts {
     }
 
     export type UploadFilesJob = {
-        files: UploadFile[],
+        files: FastqReadInfo[],
         manifestId: string,
         submissionUrl: string,
         dspUrl: string,
@@ -112,7 +113,8 @@ namespace ts {
         output_name: string,
         inputs: {
             "name": string,
-            "read_index": string
+            "read_index": string,
+            "cloud_url": string
         }[]
     }
     export type UploadFile = {
@@ -125,7 +127,7 @@ namespace ts {
         dsp_api_url: string,
         ingest_api_url: string,
         submission_url: string,
-        files: UploadFile[],
+        files: FastqReadInfo[],
         manifest_id: string,
         conversion?: UploadJobConversion
     }

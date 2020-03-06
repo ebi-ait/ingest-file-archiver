@@ -10,7 +10,7 @@ import {
     UploadFilesJob,
     UploadAssertion,
     UploadFile,
-    DownloadFile
+    DownloadFile, FastqReadInfo
 } from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
@@ -34,10 +34,17 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     doLocalFileUpload(job: UploadFilesJob): Promise<void>{
+        let downloadFiles: FastqReadInfo[] = [];
+        if(job.conversionMap){
+            downloadFiles = job.conversionMap.inputs;
+        } else {
+            downloadFiles = job.files;
+        }
+
         const downloadJob: DownloadFilesJob = {
             'basePath': this.dirBasePath,
             'container': job.manifestId,
-            'files': LocalFileUploadHandler._convertUploadFiles(job.files)
+            'files': LocalFileUploadHandler._convertUploadFiles(downloadFiles)
         };
 
         return LocalFileUploadHandler._maybeDownloadFiles(downloadJob, this.fileDownloader)
@@ -46,12 +53,12 @@ class LocalFileUploadHandler implements IHandler {
             .return()
     }
 
-    static _convertUploadFiles(uploadFiles: UploadFile[] ): DownloadFile[] {
+    static _convertUploadFiles(uploadFiles: FastqReadInfo[] ): DownloadFile[] {
         let downloadFiles: DownloadFile[] = [];
         for (let uploadFile of uploadFiles) {
             let downloadFile : DownloadFile = {
-                'fileName': uploadFile.name,
-                'source': uploadFile.cloud_url,
+                'fileName': uploadFile.fileName,
+                'source': uploadFile.cloudUrl,
             };
             downloadFiles.push(downloadFile);
         }
@@ -114,7 +121,7 @@ class LocalFileUploadHandler implements IHandler {
         const usiUrl = uploadFilesJob.dspUrl;
 
         for(let i = 0; i < uploadFilesJob.files.length; i ++) {
-            const fileName = uploadFilesJob.files[i].name;
+            const fileName = uploadFilesJob.files[i].fileName;
             const tusUpload = new TusUpload({fileName: fileName, filePath: `${fileDirBasePath}/${uploadFilesJob.manifestId}/${fileName}`}, uploadFileEndpoint);
             tusUpload.submission = LocalFileUploadHandler._submissionUuidFromSubmissionUri(new url.URL(uploadFilesJob.submissionUrl));
             tusUpload.usiUrl = usiUrl;
