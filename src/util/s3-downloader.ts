@@ -1,17 +1,51 @@
-import fs, {PathLike} from "fs";
+import fs from "fs";
 import Promise from "bluebird";
-import {promises as fsPromises} from "fs";
 import IFileDownloader from "./file-downloader";
 import {DownloadFile, DownloadFilesJob} from "../common/types";
 import * as stream from "stream";
 import {GetObjectRequest} from "aws-sdk/clients/s3";
 import {S3} from "aws-sdk";
+import HttpRange from "./http-range";
+
+const RANGE_SIZE = 30000000;
+
+interface S3StreamResponse {
+    read: stream.Readable,
+    next: boolean
+}
 
 class S3Downloader implements IFileDownloader {
     private s3Instance: S3;
 
     constructor(s3Instance: S3) {
         this.s3Instance = s3Instance;
+    }
+
+    static default() {
+        return new S3Downloader(new S3());
+    }
+
+    private static writeFile(readStream: stream.Readable, filePath: string) {
+        const writeStream = fs.createWriteStream(filePath, {flags: 'a'});
+        return new Promise<void>((resolve, reject) => {
+
+            readStream.pipe(writeStream);
+            readStream
+                .on("end", () => {
+                    writeStream.end();
+                    resolve();
+                })
+                .on("error", (err) => reject(err));
+        });
+    }
+
+    private static s3ObjectRequest(s3Url: string, httpRange: HttpRange): GetObjectRequest {
+        const url = new URL(s3Url);
+        return {
+            Bucket: url.host,
+            Key: url.pathname.substr(1),
+            Range: httpRange.toString()
+        };
     }
 
     assertFiles(downloadJob: DownloadFilesJob): Promise<void> {
@@ -35,46 +69,60 @@ class S3Downloader implements IFileDownloader {
         if (fs.existsSync(filePath)) {
             return Promise.resolve(filePath);
         } else {
-            return this.getS3Stream(downloadFile.source)
-                .then((readStream) => S3Downloader.writeFile(readStream, filePath))
-                .return(filePath)
+            let start: number = 0;
+            let rangeSize: number = RANGE_SIZE;
+            let end: number = start + rangeSize;
+            const range: HttpRange = new HttpRange(start, end); // "bytes=0-8191";
+            return this.multiDownload(downloadFile.source, range, filePath);
         }
     }
 
-    getS3Stream(s3Url: string): Promise<stream.Readable> {
-        return new Promise<stream.Readable>((resolve, reject) => {
-            const s3ObjectRequest = S3Downloader.s3ObjectRequest(s3Url);
+    multiDownload(source: string, range: HttpRange, filePath: string): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            this.getS3Stream(source, range)
+                .then((data) => {
+                    S3Downloader.writeFile(data.read, filePath);
+                    if (!data.next) {
+                        Promise.resolve(filePath)
+                    } else {
+                        this.multiDownload(source, range.next(), filePath);
+                    }
+                }).catch(error => {
+                Promise.reject(error);
+            });
+        });
+    }
+
+    getS3Stream(source: string, range: HttpRange): Promise<S3StreamResponse> {
+        const s3ObjectRequest = S3Downloader.s3ObjectRequest(source, range);
+        return new Promise<S3StreamResponse>((resolve, reject) => {
             this.s3Instance.getObject(s3ObjectRequest)
                 .promise()
-                .then(() => resolve(this.s3Instance.getObject(s3ObjectRequest).createReadStream()))
-                .catch(error => reject(error));
-        });
-    }
-
-    private static writeFile(readStream: stream.Readable, filePath: string) {
-        return new Promise<void>((resolve, reject) => {
-            const writeStream = fs.createWriteStream(filePath);
-            readStream.pipe(writeStream);
-            readStream
-                .on("end", () => {
-                    writeStream.end();
-                    resolve();
+                .then((data) => {
+                    const contentRange: string = data.ContentRange || '';
+                    const contentLength: number = data.ContentLength || 0;
+                    const size: number = Number(contentRange.split('/')[1]);
+                    let response: S3StreamResponse;
+                    console.info(`size:${size}, range:${range.toString()}, content-range:${contentRange}, content-length:${contentLength}`);
+                    if (size > range.getEnd()) {
+                        response = {
+                            read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),
+                            next: true
+                        };
+                    } else {
+                        response = {
+                            read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),
+                            next: false
+                        };
+                    }
+                    resolve(response);
                 })
-                .on("error", (err) => reject(err));
+                .catch(error => Promise.reject(error))
+
+
         });
-    }
-
-    private static s3ObjectRequest(s3Url: string): GetObjectRequest {
-        const url = new URL(s3Url);
-        return {
-            Bucket: url.host,
-            Key: url.pathname.substr(1)
-        };
-    }
-
-    static default() {
-        return new S3Downloader(new S3());
     }
 }
 
 export default S3Downloader;
+
