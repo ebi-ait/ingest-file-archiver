@@ -7,7 +7,7 @@ class HttpRange {
     constructor(start: number, size: number) {
         this.start = start;
         this.size = size;
-        this.end = start + size;
+        this.end = start + size - 1;
     }
 
     getStart(): number {
@@ -19,8 +19,8 @@ class HttpRange {
     }
 
     next(): HttpRange {
-        this.start = this.end + 1;
-        this.end = this.start + this.size;
+        this.start = this.start + this.size;
+        this.end = this.end + this.size;
         return this;
     }
 
