@@ -25,15 +25,15 @@ class S3Downloader implements IFileDownloader {
         return new S3Downloader(new S3());
     }
 
-    private static writeFile(readStream: stream.Readable, filePath: string) {
+    private static writeFile(data: S3StreamResponse, filePath: string): Promise<S3StreamResponse> {
+        const readStream: stream.Readable = data.read;
         const writeStream = fs.createWriteStream(filePath, {flags: 'a'});
-        return new Promise<void>((resolve, reject) => {
-
+        return new Promise<S3StreamResponse>((resolve, reject) => {
             readStream.pipe(writeStream);
             readStream
                 .on("end", () => {
                     writeStream.end();
-                    resolve();
+                    resolve(data);
                 })
                 .on("error", (err) => reject(err));
         });
@@ -81,13 +81,16 @@ class S3Downloader implements IFileDownloader {
         return new Promise<string>((resolve, reject) => {
             this.getS3Stream(source, range)
                 .then((data) => {
-                    S3Downloader.writeFile(data.read, filePath);
+                    return S3Downloader.writeFile(data, filePath);
+                })
+                .then( (data) => {
                     if (!data.next) {
                         Promise.resolve(filePath)
                     } else {
                         this.multiDownload(source, range.next(), filePath);
                     }
-                }).catch(error => {
+                })
+                .catch(error => {
                 Promise.reject(error);
             });
         });
