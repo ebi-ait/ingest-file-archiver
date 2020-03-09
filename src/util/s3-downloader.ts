@@ -106,7 +106,6 @@ class S3Downloader implements IFileDownloader {
                     const contentLength: number = data.ContentLength || 0;
                     const size: number = Number(contentRange.split('/')[1]);
                     let response: S3StreamResponse;
-                    console.info(`size:${size}, range:${range.toString()}, content-range:${contentRange}, content-length:${contentLength}`);
                     if (size > range.getEnd()) {
                         response = {
                             read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),

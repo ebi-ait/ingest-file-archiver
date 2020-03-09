@@ -127,7 +127,7 @@ namespace ts {
         dsp_api_url: string,
         ingest_api_url: string,
         submission_url: string,
-        files: FastqReadInfo[],
+        files: UploadFile[],
         manifest_id: string,
         conversion?: UploadJobConversion
     }

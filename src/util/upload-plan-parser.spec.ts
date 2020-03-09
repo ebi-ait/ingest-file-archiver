@@ -8,9 +8,9 @@ describe("Upload plan parser tests", () => {
            ingest_api_url: "http://mock-ingest-api-url",
            submission_url: "http://mock-usi-api-url/mock-submission-id",
            files: [{
-               fileName: 'mockFastq1.fast.gz',
-               readIndex: "read1",
-               cloudUrl: "cloud1"
+               name: 'mockFastq1.fast.gz',
+               read_index: "read1",
+               cloud_url: "cloud1"
            }],
            manifest_id: "mock-manifest-id",
            conversion: undefined
