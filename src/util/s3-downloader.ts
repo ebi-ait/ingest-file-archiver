@@ -14,6 +14,7 @@ interface S3StreamResponse {
     next: boolean
 }
 
+
 class S3Downloader implements IFileDownloader {
     private s3Instance: S3;
 
@@ -77,6 +78,10 @@ class S3Downloader implements IFileDownloader {
         }
     }
 
+/*
+    Implements multipart downloading by specifying HttpRange param in the GetObject requests
+    More details in https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html#API_GetObject_RequestSyntax
+*/
     multiDownload(source: string, range: HttpRange, filePath: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             this.getS3Stream(source, range)
@@ -102,10 +107,16 @@ class S3Downloader implements IFileDownloader {
             this.s3Instance.getObject(s3ObjectRequest)
                 .promise()
                 .then((data) => {
+                    // The "Content-Range" header field is sent in the GetObject response when HttpRange param is set
+                    // This indicates the partial range of object enclosed as the message payload
+                    // e.g. Content-Range: bytes 42-1233/1234
+                    // The complete length of selected representation is known by the sender to be 1234 bytes
+
                     const contentRange: string = data.ContentRange || '';
-                    const contentLength: number = data.ContentLength || 0;
                     const size: number = Number(contentRange.split('/')[1]);
+
                     let response: S3StreamResponse;
+
                     if (size > range.getEnd()) {
                         response = {
                             read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),
