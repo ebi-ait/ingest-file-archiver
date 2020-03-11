@@ -7,7 +7,7 @@ import {GetObjectRequest} from "aws-sdk/clients/s3";
 import {S3} from "aws-sdk";
 import HttpRange from "./http-range";
 
-const RANGE_SIZE = 30000000;
+const RANGE_SIZE = 30000000; // 30 MB
 
 interface S3StreamResponse {
     read: stream.Readable,
