@@ -14,17 +14,13 @@ E.g. The first 500 bytes (byte offsets 0-499, inclusive):
 
 class HttpRange {
     private start: number;
-    private size: number;
+    private readonly size: number;
     private end: number;
 
     constructor(start: number, size: number) {
         this.start = start;
         this.size = size;
         this.end = start + size - 1;
-    }
-
-    getStart(): number {
-        return this.start
     }
 
     getEnd(): number {
