@@ -73,7 +73,7 @@ class S3Downloader implements IFileDownloader {
             let start: number = 0;
             let rangeSize: number = RANGE_SIZE;
             let end: number = start + rangeSize;
-            const range: HttpRange = new HttpRange(start, end); // "bytes=0-8191";
+            const range: HttpRange = new HttpRange(start, end);
             return this.multiDownload(downloadFile.source, range, filePath);
         }
     }
