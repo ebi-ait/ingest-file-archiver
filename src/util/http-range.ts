@@ -3,16 +3,13 @@
 HTTP Range header
 
 The "Range" header field on a GET request modifies the method
-   semantics to request transfer of only one or more subranges of the
-   selected representation data, rather than the entire selected
-   representation data.
+semantics to request transfer of only one or more subranges of the
+selected representation data, rather than the entire selected
+representation data.
 
-     Range = byte-ranges-specifier / other-ranges-specifier
-     other-ranges-specifier = other-range-unit "=" other-range-set
-     other-range-set = 1*VCHAR
+E.g. The first 500 bytes (byte offsets 0-499, inclusive):
 
-The first 500 bytes (byte offsets 0-499, inclusive):
-        bytes=0-499
+    bytes=0-499
 */
 
 class HttpRange {
