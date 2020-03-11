@@ -1,4 +1,4 @@
-import {Fastq2BamConvertRequest, Fastq2BamParams, FastqReadInfo} from "../common/types";
+import {Fastq2BamConvertRequest, Fastq2BamParams, FastqFileInfo} from "../common/types";
 import {exec, spawn} from "child_process";
 import Promise from "bluebird";
 import R from "ramda";
@@ -67,9 +67,9 @@ class Fastq2BamConverter{
         return "10xV2";
     }
 
-    static inputFastqParams(readsInfo: FastqReadInfo[]): Fastq2BamParams["inputFastqs"] {
-        const readFilesFilterFn = (readInfo: FastqReadInfo) => readInfo.readIndex.startsWith("read");
-        const indexFilesFilterFn = (readInfo: FastqReadInfo) => readInfo.readIndex.startsWith("index");
+    static inputFastqParams(readsInfo: FastqFileInfo[]): Fastq2BamParams["inputFastqs"] {
+        const readFilesFilterFn = (readInfo: FastqFileInfo) => readInfo.readIndex.startsWith("read");
+        const indexFilesFilterFn = (readInfo: FastqFileInfo) => readInfo.readIndex.startsWith("index");
         const sortByReadIndexFn = R.sortBy(R.prop("readIndex"));
 
         const sortedReadFastqs = sortByReadIndexFn(R.filter(readFilesFilterFn, readsInfo));

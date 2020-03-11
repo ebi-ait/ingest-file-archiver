@@ -8,17 +8,17 @@ namespace ts {
      * describes how to convert fastqs into bams
      */
     export type ConversionMap = {
-        inputs: FastqReadInfo[],
+        inputs: FastqFileInfo[],
         outputName: string
     }
 
     export type Fastq2BamConvertRequest = {
-        reads: FastqReadInfo[],
+        reads: FastqFileInfo[],
         outputName: string,
         outputDir: string;
     }
 
-    export type FastqReadInfo = {
+    export type FastqFileInfo = {
         readIndex: string,
         fileName: string,
         cloudUrl: string
@@ -36,7 +36,7 @@ namespace ts {
     }
 
     export type UploadFilesJob = {
-        files: FastqReadInfo[],
+        files: FastqFileInfo[],
         manifestId: string,
         submissionUrl: string,
         dspUrl: string,

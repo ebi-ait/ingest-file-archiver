@@ -10,7 +10,7 @@ import {
     UploadFilesJob,
     UploadAssertion,
     UploadFile,
-    DownloadFile, FastqReadInfo
+    DownloadFile, FastqFileInfo
 } from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
@@ -34,7 +34,7 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     doLocalFileUpload(job: UploadFilesJob): Promise<void>{
-        let downloadFiles: FastqReadInfo[] = [];
+        let downloadFiles: FastqFileInfo[] = [];
         if(job.conversionMap){
             downloadFiles = job.conversionMap.inputs;
         } else {
@@ -53,7 +53,7 @@ class LocalFileUploadHandler implements IHandler {
             .return()
     }
 
-    static _convertUploadFiles(uploadFiles: FastqReadInfo[] ): DownloadFile[] {
+    static _convertUploadFiles(uploadFiles: FastqFileInfo[] ): DownloadFile[] {
         let downloadFiles: DownloadFile[] = [];
         for (let uploadFile of uploadFiles) {
             let downloadFile : DownloadFile = {
