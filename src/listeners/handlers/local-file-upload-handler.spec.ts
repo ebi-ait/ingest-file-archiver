@@ -1,6 +1,6 @@
 import LocalFileUploadHandler from "./local-file-upload-handler";
 import * as url from "url";
-import {ConversionMap, FastqFileInfo, UploadFile, UploadFilesJob} from "../../common/types";
+import {ConversionMap, UploadFile, UploadFilesJob} from "../../common/types";
 import TusUpload from "../../model/tus-upload";
 
 
@@ -13,7 +13,7 @@ describe("Local file uploader tests", () => {
     });
 
     it("should generate upload requests file upload messages", () => {
-        const mockFiles : FastqFileInfo[] = [
+        const mockFiles : UploadFile[] = [
             {
                 fileName: 'mockFileName1',
                 readIndex: "read1",

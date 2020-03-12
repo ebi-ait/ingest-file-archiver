@@ -1,4 +1,4 @@
-import {ConversionMap, FastqFileInfo, Job, UploadFile, UploadFilesJob, UploadJobConversion} from "../common/types";
+import {Conversion, ConversionMap, UploadFile, File, Job, UploadFilesJob} from "../common/types";
 import R from "ramda";
 
 class UploadPlanParser {
@@ -13,7 +13,7 @@ class UploadPlanParser {
         }
     }
 
-    static parseConversionMap(uploadJobConversion: UploadJobConversion): ConversionMap {
+    static parseConversionMap(conversion: Conversion): ConversionMap {
         return {
             inputs: R.map((conversionInput) => {
                 return {
@@ -21,12 +21,12 @@ class UploadPlanParser {
                     fileName: conversionInput.name,
                     cloudUrl: conversionInput.cloud_url
                 }
-            }, uploadJobConversion.inputs),
-            outputName: uploadJobConversion.output_name
+            }, conversion.inputs),
+            outputName: conversion.output_name
         }
     }
 
-    static parseFiles(files: UploadFile[]): FastqFileInfo[] {
+    static parseFiles(files: File[]): UploadFile[] {
         return R.map((file) => {
             return {readIndex: file.read_index, fileName: file.name, cloudUrl: file.cloud_url}
         }, files);

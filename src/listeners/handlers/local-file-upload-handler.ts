@@ -6,11 +6,10 @@ import url from "url";
 import {
     ConversionMap,
     DownloadFilesJob,
-    Fastq2BamConvertRequest,
+    ConvertRequest,
     UploadFilesJob,
     UploadAssertion,
-    UploadFile,
-    DownloadFile, FastqFileInfo
+    DownloadFile, UploadFile
 } from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
@@ -34,7 +33,7 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     doLocalFileUpload(job: UploadFilesJob): Promise<void>{
-        let downloadFiles: FastqFileInfo[] = [];
+        let downloadFiles: UploadFile[] = [];
         if(job.conversionMap){
             downloadFiles = job.conversionMap.inputs;
         } else {
@@ -53,7 +52,7 @@ class LocalFileUploadHandler implements IHandler {
             .return()
     }
 
-    static _convertUploadFiles(uploadFiles: FastqFileInfo[] ): DownloadFile[] {
+    static _convertUploadFiles(uploadFiles: UploadFile[] ): DownloadFile[] {
         let downloadFiles: DownloadFile[] = [];
         for (let uploadFile of uploadFiles) {
             let downloadFile : DownloadFile = {
@@ -87,7 +86,7 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _doBamConversion(fastq2BamConverter: Fastq2BamConverter, bamConvertRequest: Fastq2BamConvertRequest) : Promise<void> {
+    static _doBamConversion(fastq2BamConverter: Fastq2BamConverter, bamConvertRequest: ConvertRequest) : Promise<void> {
         return fastq2BamConverter.assertBam(bamConvertRequest)
             .then((exitCode: number) => {
                 if(exitCode === 0) {
@@ -100,7 +99,7 @@ class LocalFileUploadHandler implements IHandler {
             });
     }
 
-    static _generateBamConvertRequest(uploadMessageConversionMap: ConversionMap, fileDirBasePath: string) : Fastq2BamConvertRequest {
+    static _generateBamConvertRequest(uploadMessageConversionMap: ConversionMap, fileDirBasePath: string) : ConvertRequest {
         return {
             reads: uploadMessageConversionMap.inputs,
             outputName:  uploadMessageConversionMap.outputName,

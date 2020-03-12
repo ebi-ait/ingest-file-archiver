@@ -1,4 +1,4 @@
-import {Fastq2BamConvertRequest, Fastq2BamParams, FastqFileInfo} from "../common/types";
+import {ConvertRequest, Fastq2BamParams, UploadFile} from "../common/types";
 import {exec, spawn} from "child_process";
 import Promise from "bluebird";
 import R from "ramda";
@@ -11,11 +11,11 @@ class Fastq2BamConverter{
         this.fastq2BamPath = fastq2BamPath;
     }
 
-    convertFastq2Bam(convertRequest: Fastq2BamConvertRequest): Promise<number> {
+    convertFastq2Bam(convertRequest: ConvertRequest): Promise<number> {
         return Fastq2BamConverter._convertFastq2Bam(convertRequest, this.fastq2BamPath);
     }
 
-    assertBam(convertRequest: Fastq2BamConvertRequest): Promise<number> {
+    assertBam(convertRequest: ConvertRequest): Promise<number> {
         return Fastq2BamConverter._checkBamExists(convertRequest.outputDir, convertRequest.outputName)
             .then((itExists) => {
                     if(itExists) {
@@ -39,7 +39,7 @@ class Fastq2BamConverter{
      * @param convertRequest
      * @param fastq2BamPath
      */
-    static _convertFastq2Bam(convertRequest: Fastq2BamConvertRequest, fastq2BamPath: string) : Promise<number> {
+    static _convertFastq2Bam(convertRequest: ConvertRequest, fastq2BamPath: string) : Promise<number> {
         return new Promise<number>((resolve, reject) => {
             const runParams: Fastq2BamParams = Fastq2BamConverter.fastq2BamParamsFromConvertRequest(convertRequest);
             const runArgs = Fastq2BamConverter.paramsToArgs(runParams);
@@ -59,7 +59,7 @@ class Fastq2BamConverter{
     /**
      * Just assuming 10xV2 for now
      */
-    static bamSchemaParams(convertRequest: Fastq2BamConvertRequest): string {
+    static bamSchemaParams(convertRequest: ConvertRequest): string {
         return Fastq2BamConverter._10XV2Schema();
     }
 
@@ -67,9 +67,9 @@ class Fastq2BamConverter{
         return "10xV2";
     }
 
-    static inputFastqParams(readsInfo: FastqFileInfo[]): Fastq2BamParams["inputFastqs"] {
-        const readFilesFilterFn = (readInfo: FastqFileInfo) => readInfo.readIndex.startsWith("read");
-        const indexFilesFilterFn = (readInfo: FastqFileInfo) => readInfo.readIndex.startsWith("index");
+    static inputFastqParams(readsInfo: UploadFile[]): Fastq2BamParams["inputFastqs"] {
+        const readFilesFilterFn = (readInfo: UploadFile) => readInfo.readIndex.startsWith("read");
+        const indexFilesFilterFn = (readInfo: UploadFile) => readInfo.readIndex.startsWith("index");
         const sortByReadIndexFn = R.sortBy(R.prop("readIndex"));
 
         const sortedReadFastqs = sortByReadIndexFn(R.filter(readFilesFilterFn, readsInfo));
@@ -100,7 +100,7 @@ class Fastq2BamConverter{
         return runArgs;
     }
 
-    static fastq2BamParamsFromConvertRequest(convertRequest: Fastq2BamConvertRequest): Fastq2BamParams {
+    static fastq2BamParamsFromConvertRequest(convertRequest: ConvertRequest): Fastq2BamParams {
         return {
             schema: Fastq2BamConverter.bamSchemaParams(convertRequest),
             outputBamFilename: convertRequest.outputName,

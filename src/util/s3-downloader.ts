@@ -74,7 +74,7 @@ class S3Downloader implements IFileDownloader {
             let rangeSize: number = RANGE_SIZE;
             let end: number = start + rangeSize;
             const range: HttpRange = new HttpRange(start, end);
-            return this.multiDownload(downloadFile.source, range, filePath);
+            return this.multipartDownload(downloadFile.source, range, filePath);
         }
     }
 
@@ -82,7 +82,7 @@ class S3Downloader implements IFileDownloader {
     Implements multipart downloading by specifying HttpRange param in the GetObject requests
     More details in https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html#API_GetObject_RequestSyntax
 */
-    multiDownload(source: string, range: HttpRange, filePath: string): Promise<string> {
+    multipartDownload(source: string, range: HttpRange, filePath: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             this.getS3Stream(source, range)
                 .then((data) => {
@@ -92,7 +92,7 @@ class S3Downloader implements IFileDownloader {
                     if (!data.next) {
                         Promise.resolve(filePath)
                     } else {
-                        this.multiDownload(source, range.next(), filePath);
+                        this.multipartDownload(source, range.next(), filePath);
                     }
                 })
                 .catch(error => {
@@ -115,20 +115,10 @@ class S3Downloader implements IFileDownloader {
                     const contentRange: string = data.ContentRange || '';
                     const size: number = Number(contentRange.split('/')[1]);
 
-                    let response: S3StreamResponse;
-
-                    if (size > range.getEnd()) {
-                        response = {
-                            read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),
-                            next: true
-                        };
-                    } else {
-                        response = {
-                            read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),
-                            next: false
-                        };
-                    }
-                    resolve(response);
+                    resolve({
+                        read: this.s3Instance.getObject(s3ObjectRequest).createReadStream(),
+                        next: size > range.getEnd()
+                    });
                 })
                 .catch(error => Promise.reject(error))
 
