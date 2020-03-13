@@ -26,35 +26,21 @@ class S3Downloader implements IFileDownloader {
         return new S3Downloader(new S3());
     }
 
-    private static writeFile(data: S3StreamResponse, filePath: string): Promise<S3StreamResponse> {
-        const readStream: stream.Readable = data.read;
-        const writeStream = fs.createWriteStream(filePath, {flags: 'a'});
-        return new Promise<S3StreamResponse>((resolve, reject) => {
-            readStream.pipe(writeStream);
-            readStream
-                .on("end", () => {
-                    writeStream.end();
-                    resolve(data);
-                })
-                .on("error", (err) => reject(err));
-        });
-    }
-
-    private static s3ObjectRequest(s3Url: string, httpRange: HttpRange): GetObjectRequest {
-        const url = new URL(s3Url);
-        return {
-            Bucket: url.host,
-            Key: url.pathname.substr(1),
-            Range: httpRange.toString()
-        };
-    }
-
     assertFiles(downloadJob: DownloadFilesJob): Promise<void> {
+        console.log("Downloading files from s3...")
         const workingDir = this.assertWorkingDirectory(downloadJob.basePath, downloadJob.container);
 
         let filePromises: Promise<string>[] = [];
         downloadJob.files.forEach((file) => filePromises.push(this.assertFile(workingDir, file)));
-        return Promise.all(filePromises).return();
+        console.log('length of promises', filePromises.length);
+        return Promise.all(filePromises)
+            .then(()=>{
+                console.log("Downloading finished!")
+            })
+            .catch((error)=>{
+                console.error("error", error);
+
+            })
     }
 
     assertWorkingDirectory(basePath: string, container: string): string {
@@ -67,8 +53,12 @@ class S3Downloader implements IFileDownloader {
 
     assertFile(workingDir: string, downloadFile: DownloadFile): Promise<string> {
         const filePath = workingDir + '/' + downloadFile.fileName;
+
         if (fs.existsSync(filePath)) {
-            return Promise.resolve(filePath);
+            return new Promise<string>((resolve, reject) => {
+                resolve(filePath);
+            });
+
         } else {
             let start: number = 0;
             let rangeSize: number = RANGE_SIZE;
@@ -90,14 +80,14 @@ class S3Downloader implements IFileDownloader {
                 })
                 .then( (data) => {
                     if (!data.next) {
-                        Promise.resolve(filePath)
+                        resolve(filePath)
                     } else {
                         this.multipartDownload(source, range.next(), filePath);
                     }
                 })
                 .catch(error => {
-                Promise.reject(error);
-            });
+                    reject(error);
+                });
         });
     }
 
@@ -107,11 +97,11 @@ class S3Downloader implements IFileDownloader {
             this.s3Instance.getObject(s3ObjectRequest)
                 .promise()
                 .then((data) => {
+
                     // The "Content-Range" header field is sent in the GetObject response when HttpRange param is set
                     // This indicates the partial range of object enclosed as the message payload
                     // e.g. Content-Range: bytes 42-1233/1234
                     // The complete length of selected representation is known by the sender to be 1234 bytes
-
                     const contentRange: string = data.ContentRange || '';
                     const size: number = Number(contentRange.split('/')[1]);
 
@@ -124,6 +114,29 @@ class S3Downloader implements IFileDownloader {
 
 
         });
+    }
+
+    private static writeFile(data: S3StreamResponse, filePath: string): Promise<S3StreamResponse> {
+        const readStream: stream.Readable = data.read;
+        const writeStream = fs.createWriteStream(filePath, {flags: 'a'});
+        return new Promise<S3StreamResponse>((resolve, reject) => {
+            readStream.pipe(writeStream);
+            readStream
+                .on("end", () => {
+                    writeStream.end();
+                    resolve(data);
+                })
+                .on("error", (err) => reject(err));
+        });
+    }
+
+    private static s3ObjectRequest(s3Url: string, httpRange: HttpRange): GetObjectRequest {
+        const url = new URL(s3Url);
+        return {
+            Bucket: url.host,
+            Key: url.pathname.substr(1),
+            Range: httpRange.toString()
+        };
     }
 }
 

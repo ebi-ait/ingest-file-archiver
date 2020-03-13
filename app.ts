@@ -63,17 +63,19 @@ const uploadPlan: Plan = JSON.parse(uploadPlanFileData.toString());
 
 /* ----------------------------------- */
 
-let processUploadJobsSequential: (uploadJobs: Job[]) => Promise<void>;
-processUploadJobsSequential = (uploadJobs: Job[]) : Promise<void> => {
-    if(uploadJobs.length == 0) {
+let processUploadJobsSequential: (jobs: Job[]) => Promise<void>;
+
+processUploadJobsSequential = (jobs: Job[]) : Promise<void> => {
+    if(jobs.length == 0) {
         return Promise.resolve();
     } else {
-        const uploadJob: Job = R.head(uploadJobs)!;
-        const uploadFilesJob: UploadFilesJob = UploadPlanParser.mapUploadFilesJob(uploadJob);
-
-        return localFileUploadHandler.doLocalFileUpload(uploadFilesJob)
+        const job: Job = R.head(jobs)!;
+        return localFileUploadHandler.doLocalFileUpload(job)
             .then(() => {
-                return processUploadJobsSequential(R.tail(uploadJobs))
+                return processUploadJobsSequential(R.tail(jobs))
+            })
+            .catch(error => {
+                console.error("An error occured: ", error);
             });
     }
 };

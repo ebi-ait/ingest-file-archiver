@@ -3,30 +3,10 @@ import tus from "tus-js-client";
 
 namespace ts {
 
-    /***
-     *
-     * describes how to convert fastqs into bams
-     */
-    export type ConversionMap = {
-        inputs: UploadFile[],
-        outputName: string
-    }
-
-    export type ConvertRequest = {
-        reads: UploadFile[],
+    export type ConvertFilesJob = {
+        reads: ConvertFile[],
         outputName: string,
         outputDir: string;
-    }
-
-    export type UploadFile = {
-        readIndex: string,
-        fileName: string,
-        cloudUrl: string
-    }
-
-    export type DownloadFile = {
-        fileName: string,
-        source: string
     }
 
     export type DownloadFilesJob = {
@@ -39,8 +19,21 @@ namespace ts {
         files: UploadFile[],
         manifestId: string,
         submissionUrl: string,
-        dspUrl: string,
-        conversionMap? : ConversionMap
+        dspUrl: string
+    }
+
+    export type UploadFile = {
+        fileName: string,
+    }
+
+    export type ConvertFile = {
+        readIndex: string,
+        fileName: string
+    }
+
+    export type DownloadFile = {
+        fileName: string,
+        source: string
     }
 
     export type ConnectionProperties = {
@@ -63,7 +56,7 @@ namespace ts {
 
     export type S3Info = {
         s3Location: S3Location,
-        s3AuthInfo? : S3Auth
+        s3AuthInfo?: S3Auth
     }
 
 
@@ -99,9 +92,9 @@ namespace ts {
 
     export type BundleDownloadRequest = {
         bundleUuid: string,
-        cloudReplica: "aws"| "gcp",
+        cloudReplica: "aws" | "gcp",
         bundleBaseDir: string,
-        environment? : string
+        environment?: string
     }
 
     export type BundleDownloadParams = {

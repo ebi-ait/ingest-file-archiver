@@ -1,4 +1,4 @@
-import {ConvertRequest, Fastq2BamParams} from "../common/types";
+import {ConvertFilesJob, Fastq2BamParams} from "../common/types";
 import Fastq2BamConverter from "./fastq-2-bam-converter";
 
 describe("fastq-bam conversion tests", () => {
@@ -14,22 +14,19 @@ describe("fastq-bam conversion tests", () => {
     const mockR2Path = `${mockBaseDir}/${mockR2Name}`;
     const mockIndexPath = `${mockBaseDir}/${mockIndexName}`;
 
-    const convertRequest:ConvertRequest = {
+    const convertRequest:ConvertFilesJob = {
         reads: [
             {
                 readIndex: "read2",
-                fileName: mockR2Path,
-                cloudUrl: "cloudUrl1"
+                fileName: mockR2Path
             },
             {
                 readIndex: "read1",
-                fileName: mockR1Path,
-                cloudUrl: "cloudUrl1"
+                fileName: mockR1Path
             },
             {
                 readIndex: "index1",
-                fileName: mockIndexPath,
-                cloudUrl: "cloudUrl1"
+                fileName: mockIndexPath
             }
         ],
         outputName: mockOutputName,

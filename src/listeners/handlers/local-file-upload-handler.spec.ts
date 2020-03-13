@@ -1,7 +1,8 @@
 import LocalFileUploadHandler from "./local-file-upload-handler";
 import * as url from "url";
-import {ConversionMap, UploadFile, UploadFilesJob} from "../../common/types";
+import {Conversion, File, Job, UploadFile, UploadFilesJob} from "../../common/types";
 import TusUpload from "../../model/tus-upload";
+import UploadPlanParser from "../../util/upload-plan-parser";
 
 
 describe("Local file uploader tests", () => {
@@ -13,21 +14,15 @@ describe("Local file uploader tests", () => {
     });
 
     it("should generate upload requests file upload messages", () => {
-        const mockFiles : UploadFile[] = [
+        const mockFiles: UploadFile[] = [
             {
-                fileName: 'mockFileName1',
-                readIndex: "read1",
-                cloudUrl: "cloud1"
+                fileName: 'mockFileName1'
             },
             {
-                fileName: 'mockFileName2',
-                readIndex: "read2",
-                cloudUrl: "cloud2"
+                fileName: 'mockFileName2'
             },
             {
-                fileName: 'mockFileName3',
-                readIndex: "read3",
-                cloudUrl: "cloud3"
+                fileName: 'mockFileName3'
             }
         ];
         const mockSubmissionUuid = "deadbeef-dead-dead-dead-deaddeafbeef";
@@ -36,7 +31,7 @@ describe("Local file uploader tests", () => {
         const mockManifestId = "mock-manifest-id";
         const mockFileBasePathDir = "/data/myfiles";
 
-        const mockUploadMessage : UploadFilesJob = {
+        const mockUploadMessage: UploadFilesJob = {
             files: mockFiles,
             dspUrl: mockDspUrl,
             submissionUrl: mockSubmissionUrl.toString(),
@@ -64,29 +59,39 @@ describe("Local file uploader tests", () => {
         const mockManifestId = "mock-manifest-id";
         const mockFileBasePathDir = `/data/myfiles/${mockManifestId}`;
 
-        const mockConversionMapPair: ConversionMap = {
+        const conversion: Conversion = {
             inputs: [
                 {
-                    readIndex: "read1",
-                    fileName: mockR1,
-                    cloudUrl:'cloudUrl1'
+                    read_index: "read1",
+                    name: mockR1,
+                    cloud_url: 'cloudUrl1'
                 },
                 {
-                    readIndex: "read2",
-                    fileName: mockR2,
-                    cloudUrl:'cloudUrl1'
+                    read_index: "read2",
+                    name: mockR2,
+                    cloud_url: 'cloudUrl1'
 
                 },
                 {
-                    readIndex: "index1",
-                    fileName: mockIndex,
-                    cloudUrl:'cloudUrl1'
+                    read_index: "index1",
+                    name: mockIndex,
+                    cloud_url: 'cloudUrl1'
                 }
             ],
-            outputName: mockOutputName
+            output_name: mockOutputName
         };
 
-        const convertRequestPair = LocalFileUploadHandler._generateBamConvertRequest(mockConversionMapPair, mockFileBasePathDir);
+        const files: File[] = [];
+        const job: Job = {
+            dsp_api_url: '',
+            ingest_api_url: '',
+            submission_url: '',
+            files: files,
+            manifest_id: '',
+            conversion: conversion
+        };
+
+        const convertRequestPair = UploadPlanParser.convertToConvertFilesJob(job, mockFileBasePathDir);
         expect(convertRequestPair.reads).toContainEqual({readIndex: "read1", fileName: mockR1});
         expect(convertRequestPair.reads).toContainEqual({readIndex: "read2", fileName: mockR2});
         expect(convertRequestPair.reads).toContainEqual({readIndex: "index1", fileName: mockIndex});
