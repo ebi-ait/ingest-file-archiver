@@ -3,29 +3,10 @@ import tus from "tus-js-client";
 
 namespace ts {
 
-    /***
-     *
-     * describes how to convert fastqs into bams
-     */
-    export type ConversionMap = {
-        inputs: FastqReadInfo[],
-        outputName: string
-    }
-
-    export type Fastq2BamConvertRequest = {
-        reads: FastqReadInfo[],
+    export type ConvertFilesJob = {
+        reads: ConvertFile[],
         outputName: string,
         outputDir: string;
-    }
-
-    export type FastqReadInfo = {
-        readIndex: string,
-        fileName: string
-    }
-
-    export type DownloadFile = {
-        fileName: string,
-        source: string
     }
 
     export type DownloadFilesJob = {
@@ -38,8 +19,21 @@ namespace ts {
         files: UploadFile[],
         manifestId: string,
         submissionUrl: string,
-        dspUrl: string,
-        conversionMap? : ConversionMap
+        dspUrl: string
+    }
+
+    export type UploadFile = {
+        fileName: string,
+    }
+
+    export type ConvertFile = {
+        readIndex: string,
+        fileName: string
+    }
+
+    export type DownloadFile = {
+        fileName: string,
+        source: string
     }
 
     export type ConnectionProperties = {
@@ -62,7 +56,7 @@ namespace ts {
 
     export type S3Info = {
         s3Location: S3Location,
-        s3AuthInfo? : S3Auth
+        s3AuthInfo?: S3Auth
     }
 
 
@@ -98,9 +92,9 @@ namespace ts {
 
     export type BundleDownloadRequest = {
         bundleUuid: string,
-        cloudReplica: "aws"| "gcp",
+        cloudReplica: "aws" | "gcp",
         bundleBaseDir: string,
-        environment? : string
+        environment?: string
     }
 
     export type BundleDownloadParams = {
@@ -108,14 +102,7 @@ namespace ts {
         replica: string
     }
 
-    export type UploadJobConversion = {
-        output_name: string,
-        inputs: {
-            "name": string,
-            "read_index": string
-        }[]
-    }
-    export type UploadFile = {
+    export type File = {
         name: string,
         read_index: string,
         cloud_url: string
@@ -125,9 +112,14 @@ namespace ts {
         dsp_api_url: string,
         ingest_api_url: string,
         submission_url: string,
-        files: UploadFile[],
+        files: File[],
         manifest_id: string,
-        conversion?: UploadJobConversion
+        conversion?: Conversion
+    }
+
+    export type Conversion = {
+        output_name: string,
+        inputs: File[]
     }
 
     export type Plan = {

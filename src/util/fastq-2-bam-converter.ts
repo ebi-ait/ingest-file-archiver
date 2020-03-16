@@ -1,31 +1,27 @@
-import {Fastq2BamConvertRequest, Fastq2BamParams, FastqReadInfo} from "../common/types";
-import {exec, spawn} from "child_process";
+import {ConvertFile, ConvertFilesJob, Fastq2BamParams} from "../common/types";
+import {exec} from "child_process";
 import Promise from "bluebird";
 import R from "ramda";
 import FileExistenceChecker from "./file-existence-checker";
 
-class Fastq2BamConverter{
+class Fastq2BamConverter {
     fastq2BamPath: string;
 
     constructor(fastq2BamPath: string) {
         this.fastq2BamPath = fastq2BamPath;
     }
 
-    convertFastq2Bam(convertRequest: Fastq2BamConvertRequest): Promise<number> {
-        return Fastq2BamConverter._convertFastq2Bam(convertRequest, this.fastq2BamPath);
-    }
-
-    assertBam(convertRequest: Fastq2BamConvertRequest): Promise<number> {
-        return Fastq2BamConverter._checkBamExists(convertRequest.outputDir, convertRequest.outputName)
+    assertBam(convertFilesJob: ConvertFilesJob): Promise<number> {
+        return Fastq2BamConverter._checkBamExists(convertFilesJob.outputDir, convertFilesJob.outputName)
             .then((itExists) => {
-                    if(itExists) {
-                        console.log(`.bam file with name ${convertRequest.outputName} already exists at ${convertRequest.outputDir}`);
-                        return Promise.resolve(0);
-                    } else {
-                        console.log(`Doing bam conversion for ${(R.map((read) => read.fileName, convertRequest.reads)).join(" ")}`);
-                        return Fastq2BamConverter._convertFastq2Bam(convertRequest, this.fastq2BamPath);
-                    }
-                });
+                if (itExists) {
+                    console.log(`.bam file with name ${convertFilesJob.outputName} already exists at ${convertFilesJob.outputDir}`);
+                    return Promise.resolve(0);
+                } else {
+                    console.log(`Doing bam conversion for ${(R.map((read) => read.fileName, convertFilesJob.reads)).join(" ")}`);
+                    return Fastq2BamConverter._convertFastq2Bam(convertFilesJob, this.fastq2BamPath);
+                }
+            });
     }
 
     static _checkBamExists(bamDir: string, bamName: string): Promise<boolean> {
@@ -36,30 +32,30 @@ class Fastq2BamConverter{
      *
      * Performs a fastq-bam conversion, returns the result code in a process
      *
-     * @param convertRequest
+     * @param convertFilesJob
      * @param fastq2BamPath
      */
-    static _convertFastq2Bam(convertRequest: Fastq2BamConvertRequest, fastq2BamPath: string) : Promise<number> {
+    static _convertFastq2Bam(convertFilesJob: ConvertFilesJob, fastq2BamPath: string): Promise<number> {
         return new Promise<number>((resolve, reject) => {
-            const runParams: Fastq2BamParams = Fastq2BamConverter.fastq2BamParamsFromConvertRequest(convertRequest);
+            const runParams: Fastq2BamParams = Fastq2BamConverter.fastq2BamParamsFromConvertRequest(convertFilesJob);
             const runArgs = Fastq2BamConverter.paramsToArgs(runParams);
 
-            exec(fastq2BamPath +  " " + runArgs.join(" "),
-                {cwd: convertRequest.outputDir},
+            exec(fastq2BamPath + " " + runArgs.join(" "),
+                {cwd: convertFilesJob.outputDir},
                 (Err, stdout, stderr) => {
-                    if(Err) {
+                    if (Err) {
                         reject(Err);
                     } else {
                         resolve(0);
                     }
-            });
+                });
         });
     }
 
     /**
      * Just assuming 10xV2 for now
      */
-    static bamSchemaParams(convertRequest: Fastq2BamConvertRequest): string {
+    static bamSchemaParams(): string {
         return Fastq2BamConverter._10XV2Schema();
     }
 
@@ -67,9 +63,9 @@ class Fastq2BamConverter{
         return "10xV2";
     }
 
-    static inputFastqParams(readsInfo: FastqReadInfo[]): Fastq2BamParams["inputFastqs"] {
-        const readFilesFilterFn = (readInfo: FastqReadInfo) => readInfo.readIndex.startsWith("read");
-        const indexFilesFilterFn = (readInfo: FastqReadInfo) => readInfo.readIndex.startsWith("index");
+    static inputFastqParams(readsInfo: ConvertFile[]): Fastq2BamParams["inputFastqs"] {
+        const readFilesFilterFn = (readInfo: ConvertFile) => readInfo.readIndex.startsWith("read");
+        const indexFilesFilterFn = (readInfo: ConvertFile) => readInfo.readIndex.startsWith("index");
         const sortByReadIndexFn = R.sortBy(R.prop("readIndex"));
 
         const sortedReadFastqs = sortByReadIndexFn(R.filter(readFilesFilterFn, readsInfo));
@@ -91,7 +87,9 @@ class Fastq2BamConverter{
 
         runArgs = runArgs.concat(
             R.reduce(
-                (acc: string[] , item: string[]) => { return acc.concat(item)},
+                (acc: string[], item: string[]) => {
+                    return acc.concat(item)
+                },
                 [],
                 argNumFastqPairs
             )
@@ -100,13 +98,15 @@ class Fastq2BamConverter{
         return runArgs;
     }
 
-    static fastq2BamParamsFromConvertRequest(convertRequest: Fastq2BamConvertRequest): Fastq2BamParams {
+    static fastq2BamParamsFromConvertRequest(convertFilesJob: ConvertFilesJob): Fastq2BamParams {
         return {
-            schema: Fastq2BamConverter.bamSchemaParams(convertRequest),
-            outputBamFilename: convertRequest.outputName,
-            inputFastqs: Fastq2BamConverter.inputFastqParams(convertRequest.reads)
+            schema: Fastq2BamConverter.bamSchemaParams(),
+            outputBamFilename: convertFilesJob.outputName,
+            inputFastqs: Fastq2BamConverter.inputFastqParams(convertFilesJob.reads)
         }
     }
+
+
 }
 
 export default Fastq2BamConverter;

@@ -16,6 +16,6 @@ describe("Upload plan parser tests", () => {
            conversion: undefined
        };
 
-       expect(UploadPlanParser.mapUploadFilesJob(mockUploadJob)).toBeTruthy();
+       expect(UploadPlanParser.convertToUploadFilesJob(mockUploadJob)).toBeTruthy();
    })
 });

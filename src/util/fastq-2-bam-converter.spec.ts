@@ -1,4 +1,4 @@
-import {Fastq2BamConvertRequest, Fastq2BamParams} from "../common/types";
+import {ConvertFilesJob, Fastq2BamParams} from "../common/types";
 import Fastq2BamConverter from "./fastq-2-bam-converter";
 
 describe("fastq-bam conversion tests", () => {
@@ -14,7 +14,7 @@ describe("fastq-bam conversion tests", () => {
     const mockR2Path = `${mockBaseDir}/${mockR2Name}`;
     const mockIndexPath = `${mockBaseDir}/${mockIndexName}`;
 
-    const convertRequest:Fastq2BamConvertRequest = {
+    const convertRequest:ConvertFilesJob = {
         reads: [
             {
                 readIndex: "read2",

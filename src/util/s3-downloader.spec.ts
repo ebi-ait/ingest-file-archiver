@@ -7,6 +7,7 @@ import {PromiseResult} from "aws-sdk/lib/request";
 import * as fs from "fs";
 import {Times} from "typemoq";
 import {GetObjectOutput} from "aws-sdk/clients/s3";
+import HttpRange from "./http-range";
 
 function stringifyStream(stream: Readable) {
     return new Promise<string>(((resolve, reject) => {
@@ -74,12 +75,13 @@ describe("S3 downloader tests", () => {
     it('should get read stream from S3', done => {
         //Arrange
         const mockS3Url = "s3://mock-bucket/read-stream/mock-file.txt";
+        const mockRange = new HttpRange(0, 10);
         const {s3Text, mockS3ClientFactory} = SetupS3Mock("Hello S3 Stream!");
         const s3Downloader: S3Downloader = new S3Downloader(mockS3ClientFactory.object);
 
         //Act
-        s3Downloader.getS3Stream(mockS3Url)
-            .then(stream => stringifyStream(stream))
+        s3Downloader.getS3Stream(mockS3Url, mockRange)
+            .then(response => response)
             .then(text => {
                 expect(text).toBe(s3Text);
                 done();
