@@ -54,13 +54,14 @@ class BundleDownloader {
         return new Promise<string>((resolve, reject) => {
             const command : string = `${this.hcaCliPath} dss download --bundle-uuid ${bundleUuid} --version ${bundleVersion} --replica aws --no-metadata --data-filter ${fileNames}`
             console.log(`Bundle Files Command: ${command}`)
-            exec(command, {cwd: workingDir},(error, stdout, stderr)=> {
+            const hcaCli = exec(command, {cwd: workingDir},(error, stdout, stderr)=> {
                 if (error) {
                     console.error(`Bundle Files Error: ${error}`);
                     reject(error)
                 }
                 resolve(`${bundleUuid}.${bundleVersion}`)
             });
+            hcaCli.stderr.pipe(process.stdout);
         });
     }
 
