@@ -97,6 +97,17 @@ class FileUploader {
 
             let upload: Upload;
 
+            const params = {
+                endpoint: tusUpload.uploadUrl!,
+                uploadUrl: tusUpload.uploadUrl!,
+                retryDelays: [0, 1000, 3000, 5000],
+                metadata: tusUpload.metadataToDict(),
+                chunkSize: 2000000,
+                uploadSize: tusUpload.fileInfo.fileSize
+            };
+
+            console.log('tus upload', params);
+
             upload = new tus.Upload(fileStream, {
                 endpoint: tusUpload.uploadUrl!,
                 uploadUrl: tusUpload.uploadUrl!,
