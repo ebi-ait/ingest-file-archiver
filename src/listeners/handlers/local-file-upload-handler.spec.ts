@@ -1,6 +1,6 @@
 import LocalFileUploadHandler from "./local-file-upload-handler";
 import * as url from "url";
-import {Conversion, File, Job, UploadFile, UploadFilesJob} from "../../common/types";
+import {Conversion, File, Job, FileName, UploadFilesJob} from "../../common/types";
 import TusUpload from "../../model/tus-upload";
 import UploadPlanParser from "../../util/upload-plan-parser";
 
@@ -14,7 +14,7 @@ describe("Local file uploader tests", () => {
     });
 
     it("should generate upload requests file upload messages", () => {
-        const mockFiles: UploadFile[] = [
+        const mockFiles: FileName[] = [
             {
                 fileName: 'mockFileName1'
             },

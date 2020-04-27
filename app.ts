@@ -7,17 +7,12 @@ import AapTokenClient from "./src/util/aap-token-client";
 import {
     AAPCredentials,
     Job,
-    Plan,
-    UploadFilesJob
+    Plan
 } from "./src/common/types";
 import Fastq2BamConverter from "./src/util/fastq-2-bam-converter";
-import BundleDownloader from "./src/util/bundle-downloader";
 import R from "ramda";
 import Promise from "bluebird";
 import TokenManager from "./src/util/token-manager";
-import UploadPlanParser from "./src/util/upload-plan-parser";
-import IFileDownloader from "./src/util/file-downloader";
-import S3Downloader from "./src/util/s3-downloader";
 /* ----------------------------------- */
 
 const tokenClient = (() => {
@@ -39,16 +34,16 @@ const fastq2BamConverter = (() => {
     return new Fastq2BamConverter("/app/fastq/bin/fastq2bam");
 })();
 
-const fileDownloader: IFileDownloader = (() => {
-    return S3Downloader.default();
-})();
-
 const dirBasePath = (() => {
-    return config.get("FILES.baseDir") as string;
+    let baseDir: string = config.get("FILES.baseDir") as string
+    if (baseDir.length > 1 && baseDir.endsWith('/')) {
+        baseDir = baseDir.substr(0, baseDir.length - 1)
+    }
+    return baseDir;
 })();
 
 const localFileUploadHandler = (() => {
-    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, fileDownloader, dirBasePath);
+    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, dirBasePath);
 })();
 
 

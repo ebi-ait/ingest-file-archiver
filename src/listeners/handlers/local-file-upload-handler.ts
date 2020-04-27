@@ -3,23 +3,33 @@ import {AmqpMessage, IHandler} from "./handler";
 import FileUploader from "../../util/file-uploader";
 import TusUpload from "../../model/tus-upload";
 import url from "url";
-import {ConvertFilesJob, DownloadFilesJob, Job, UploadAssertion, UploadFilesJob} from "../../common/types";
+import {
+    ConvertFilesJob,
+    DownloadBundleFilesJob,
+    DownloadS3FilesJob,
+    Job,
+    UploadAssertion,
+    UploadFilesJob
+} from "../../common/types";
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
-import IFileDownloader from "../../util/file-downloader";
 import UploadPlanParser from "../../util/upload-plan-parser";
+import S3Downloader from "../../util/s3-downloader";
+import BundleDownloader from "../../util/bundle-downloader";
 
 class LocalFileUploadHandler implements IHandler {
     fileUploader: FileUploader;
     fastq2BamConverter: Fastq2BamConverter;
-    fileDownloader: IFileDownloader;
+    s3Downloader: S3Downloader;
+    bundleDownloader: BundleDownloader;
     dirBasePath: string;
 
-    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, fileDownloader: IFileDownloader, dirBasePath: string) {
+    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, dirBasePath: string) {
         this.fileUploader = fileUploader;
         this.fastq2BamConverter = fastq2BamConverter;
-        this.fileDownloader = fileDownloader;
         this.dirBasePath = dirBasePath;
+        this.s3Downloader = S3Downloader.default();
+        this.bundleDownloader = new BundleDownloader("hca");
     }
 
     handle(msg: AmqpMessage): Promise<void> {
@@ -27,7 +37,7 @@ class LocalFileUploadHandler implements IHandler {
     }
 
     doLocalFileUpload(job: Job): Promise<void> {
-        return LocalFileUploadHandler._maybeDownloadFiles(job, this.dirBasePath, this.fileDownloader)
+        return this._maybeDownloadFiles(job, this.dirBasePath)
             .then(() => LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter))
             .then(() => LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath))
             .return()
@@ -42,9 +52,14 @@ class LocalFileUploadHandler implements IHandler {
         }
     }
 
-    static _maybeDownloadFiles(job: Job, fileDirBasePath: string, fileDownloader: IFileDownloader): Promise<void> {
-        const downloadJob: DownloadFilesJob = UploadPlanParser.convertToDownloadFilesJob(job, fileDirBasePath);
-        return fileDownloader.assertFiles(downloadJob)
+    _maybeDownloadFiles(job: Job, fileDirBasePath :string): Promise<void> {
+        if ( job.dcp_bundle_uuid ) {
+            const bundleFilesJob: DownloadBundleFilesJob = UploadPlanParser.convertToDownloadBundleFilesJob(job, fileDirBasePath);
+            return this.bundleDownloader.assertFiles(bundleFilesJob);
+        } else {
+            const s3FilesJob: DownloadS3FilesJob = UploadPlanParser.convertToDownloadFilesJob(job, fileDirBasePath);
+            return this.s3Downloader.assertFiles(s3FilesJob);
+        }
     }
 
     static _maybeBamConvert(job: Job, fileDirBasePath: string, fastq2BamConverter: Fastq2BamConverter): Promise<void> {
