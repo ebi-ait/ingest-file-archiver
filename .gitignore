@@ -91,5 +91,6 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+/data/**
 /ingest-ui.iml
 /private.yml

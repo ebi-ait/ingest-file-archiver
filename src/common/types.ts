@@ -9,20 +9,27 @@ namespace ts {
         outputDir: string;
     }
 
-    export type DownloadFilesJob = {
+    export type DownloadS3FilesJob = {
         basePath: string,
         container: string,
         files: DownloadFile[]
     }
 
+    export type DownloadBundleFilesJob = {
+        basePath: string,
+        container: string,
+        bundleUuid: string,
+        files: FileName[]
+    }
+
     export type UploadFilesJob = {
-        files: UploadFile[],
+        files: FileName[],
         manifestId: string,
         submissionUrl: string,
         dspUrl: string
     }
 
-    export type UploadFile = {
+    export type FileName = {
         fileName: string,
     }
 
@@ -59,7 +66,6 @@ namespace ts {
         s3AuthInfo?: S3Auth
     }
 
-
     export type TusMetadata = {
         key: string,
         value: string | number | boolean
@@ -90,22 +96,10 @@ namespace ts {
         inputFastqs: string[]
     }
 
-    export type BundleDownloadRequest = {
-        bundleUuid: string,
-        cloudReplica: "aws" | "gcp",
-        bundleBaseDir: string,
-        environment?: string
-    }
-
-    export type BundleDownloadParams = {
-        bundleUuid: string,
-        replica: string
-    }
-
     export type File = {
         name: string,
         read_index: string,
-        cloud_url: string
+        cloud_url?: string
     }
 
     export type Job = {
@@ -114,6 +108,7 @@ namespace ts {
         submission_url: string,
         files: File[],
         manifest_id: string,
+        dcp_bundle_uuid?: string
         conversion?: Conversion
     }
 

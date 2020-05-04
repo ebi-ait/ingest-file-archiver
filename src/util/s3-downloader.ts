@@ -1,7 +1,6 @@
 import fs from "fs";
 import Promise from "bluebird";
-import IFileDownloader from "./file-downloader";
-import {DownloadFile, DownloadFilesJob} from "../common/types";
+import {DownloadFile, DownloadS3FilesJob} from "../common/types";
 import * as stream from "stream";
 import {GetObjectRequest} from "aws-sdk/clients/s3";
 import {S3} from "aws-sdk";
@@ -15,7 +14,7 @@ interface S3StreamResponse {
 }
 
 
-class S3Downloader implements IFileDownloader {
+class S3Downloader {
     private s3Instance: S3;
 
     constructor(s3Instance: S3) {
@@ -26,7 +25,7 @@ class S3Downloader implements IFileDownloader {
         return new S3Downloader(new S3());
     }
 
-    assertFiles(downloadJob: DownloadFilesJob): Promise<void> {
+    assertFiles(downloadJob: DownloadS3FilesJob): Promise<void> {
         console.log("Downloading files from s3...")
         const workingDir = this.assertWorkingDirectory(downloadJob.basePath, downloadJob.container);
 
@@ -36,11 +35,7 @@ class S3Downloader implements IFileDownloader {
         return Promise.all(filePromises)
             .then(()=>{
                 console.log("Downloading finished!")
-            })
-            .catch((error)=>{
-                console.error("error", error);
-
-            })
+            });
     }
 
     assertWorkingDirectory(basePath: string, container: string): string {
@@ -55,14 +50,10 @@ class S3Downloader implements IFileDownloader {
         const filePath = workingDir + '/' + downloadFile.fileName;
 
         if (fs.existsSync(filePath)) {
-            return new Promise<string>((resolve, reject) => {
-                resolve(filePath);
-            });
-
+            return Promise.resolve(filePath)
         } else {
             let start: number = 0;
-            let rangeSize: number = RANGE_SIZE;
-            let end: number = start + rangeSize;
+            let end: number = start + RANGE_SIZE;
             const range: HttpRange = new HttpRange(start, end);
             return this.multipartDownload(downloadFile.source, range, filePath);
         }
