@@ -1,7 +1,7 @@
 type AmqpMessage = {messageBytes: string};
 
 interface IHandler {
-    handle(msg: AmqpMessage): void;
+    handle(msg: string): Promise<boolean>;
 }
 
 export default IHandler;

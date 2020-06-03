@@ -2,6 +2,23 @@ import * as stream from "stream";
 import tus from "tus-js-client";
 
 namespace ts {
+    export type AmqpConfig = {
+        connection: AmqpConnection;
+        messaging: AmqpMessaging;
+    }
+
+    export type AmqpConnection = {
+        scheme: string;
+        host: string;
+        port: string;
+    }
+
+    export type AmqpMessaging = {
+        exchange: string;
+        exchangeType: string;
+        queueName: string;
+        routingKey: string;
+    }
 
     export type ConvertFilesJob = {
         reads: ConvertFile[],

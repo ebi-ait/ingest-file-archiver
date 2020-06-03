@@ -25,16 +25,38 @@ class S3Downloader {
         return new S3Downloader(new S3());
     }
 
+    private static writeFile(data: S3StreamResponse, filePath: string): Promise<S3StreamResponse> {
+        const readStream: stream.Readable = data.read;
+        const writeStream = fs.createWriteStream(filePath, {flags: 'a'});
+        return new Promise<S3StreamResponse>((resolve, reject) => {
+            readStream.pipe(writeStream);
+            readStream
+                .on("end", () => {
+                    writeStream.end();
+                    resolve(data);
+                })
+                .on("error", (err) => reject(err));
+        });
+    }
+
+    private static s3ObjectRequest(s3Url: string, httpRange: HttpRange): GetObjectRequest {
+        const url = new URL(s3Url);
+        return {
+            Bucket: url.host,
+            Key: url.pathname.substr(1),
+            Range: httpRange.toString()
+        };
+    }
+
     assertFiles(downloadJob: DownloadS3FilesJob): Promise<void> {
         console.log("Downloading files from s3...")
         const workingDir = this.assertWorkingDirectory(downloadJob.basePath, downloadJob.container);
 
         let filePromises: Promise<string>[] = [];
         downloadJob.files.forEach((file) => filePromises.push(this.assertFile(workingDir, file)));
-        console.log('length of promises', filePromises.length);
         return Promise.all(filePromises)
-            .then(()=>{
-                console.log("Downloading finished!")
+            .then(() => {
+                console.log('Donwloading finished!')
             });
     }
 
@@ -59,17 +81,17 @@ class S3Downloader {
         }
     }
 
-/*
-    Implements multipart downloading by specifying HttpRange param in the GetObject requests
-    More details in https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html#API_GetObject_RequestSyntax
-*/
+    /*
+        Implements multipart downloading by specifying HttpRange param in the GetObject requests
+        More details in https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html#API_GetObject_RequestSyntax
+    */
     multipartDownload(source: string, range: HttpRange, filePath: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             this.getS3Stream(source, range)
                 .then((data) => {
                     return S3Downloader.writeFile(data, filePath);
                 })
-                .then( (data) => {
+                .then((data) => {
                     if (!data.next) {
                         resolve(filePath)
                     } else {
@@ -105,29 +127,6 @@ class S3Downloader {
 
 
         });
-    }
-
-    private static writeFile(data: S3StreamResponse, filePath: string): Promise<S3StreamResponse> {
-        const readStream: stream.Readable = data.read;
-        const writeStream = fs.createWriteStream(filePath, {flags: 'a'});
-        return new Promise<S3StreamResponse>((resolve, reject) => {
-            readStream.pipe(writeStream);
-            readStream
-                .on("end", () => {
-                    writeStream.end();
-                    resolve(data);
-                })
-                .on("error", (err) => reject(err));
-        });
-    }
-
-    private static s3ObjectRequest(s3Url: string, httpRange: HttpRange): GetObjectRequest {
-        const url = new URL(s3Url);
-        return {
-            Bucket: url.host,
-            Key: url.pathname.substr(1),
-            Range: httpRange.toString()
-        };
     }
 }
 

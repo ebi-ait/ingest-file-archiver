@@ -4,15 +4,10 @@ import config from "config";
 import LocalFileUploadHandler from "./src/listeners/handlers/local-file-upload-handler";
 import FileUploader from "./src/util/file-uploader";
 import AapTokenClient from "./src/util/aap-token-client";
-import {
-    AAPCredentials,
-    Job,
-    Plan
-} from "./src/common/types";
+import {AAPCredentials, AmqpConfig} from "./src/common/types";
 import Fastq2BamConverter from "./src/util/fastq-2-bam-converter";
-import R from "ramda";
-import Promise from "bluebird";
 import TokenManager from "./src/util/token-manager";
+import Listener from "./src/listeners/listener";
 /* ----------------------------------- */
 
 const tokenClient = (() => {
@@ -47,44 +42,25 @@ const localFileUploadHandler = (() => {
 })();
 
 
-const uploadPlanFilePath: string = config.get("FILES.uploadPlanPath");
-if (! fs.existsSync(uploadPlanFilePath)) {
-    console.error("Error UPLOAD_PLAN_PATH does not exist: " + uploadPlanFilePath);
-    process.exit(1)
-}
-
-const uploadPlanFileData: Buffer = fs.readFileSync(uploadPlanFilePath);
-const uploadPlan: Plan = JSON.parse(uploadPlanFileData.toString());
-
 /* ----------------------------------- */
-
-let processUploadJobsSequential: (jobs: Job[]) => Promise<void>;
-
-processUploadJobsSequential = (jobs: Job[]) : Promise<void> => {
-    if(jobs.length == 0) {
-        return Promise.resolve();
-    } else {
-        const job: Job = R.head(jobs)!;
-        return localFileUploadHandler.doLocalFileUpload(job)
-            .then(() => {
-                return processUploadJobsSequential(R.tail(jobs))
-            })
-            .catch(error => {
-                console.error("An error occured: ", error);
-            });
+const uploadFromLocalFile = () => {
+    const uploadPlanFilePath: string = config.get("FILES.uploadPlanPath");
+    if (! fs.existsSync(uploadPlanFilePath)) {
+        console.error("Error UPLOAD_PLAN_PATH does not exist: " + uploadPlanFilePath);
+        process.exit(1)
     }
+    const uploadPlanFileData: Buffer = fs.readFileSync(uploadPlanFilePath);
+    localFileUploadHandler.handle(uploadPlanFileData.toString())
 };
 
+const dspFileUploadListener = (() => {
+    const listener = new Listener(config.get("AMQP") as AmqpConfig, );
+    listener.setHandler(localFileUploadHandler);
+    return listener;
+})();
+
 const start = () => {
-    processUploadJobsSequential(uploadPlan.jobs)
-        .then(() => {
-            console.log("Finished");
-            process.exit(0)
-        })
-        .catch(error => {
-            console.error("Error: " + error.toString());
-            process.exit(1)
-        });
+    dspFileUploadListener.start();
 };
 
 start();

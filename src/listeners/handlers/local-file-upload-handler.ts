@@ -1,5 +1,5 @@
 import Promise from "bluebird";
-import {AmqpMessage, IHandler} from "./handler";
+import {IHandler} from "./handler";
 import FileUploader from "../../util/file-uploader";
 import TusUpload from "../../model/tus-upload";
 import url from "url";
@@ -8,6 +8,7 @@ import {
     DownloadBundleFilesJob,
     DownloadS3FilesJob,
     Job,
+    Plan,
     UploadAssertion,
     UploadFilesJob
 } from "../../common/types";
@@ -32,33 +33,12 @@ class LocalFileUploadHandler implements IHandler {
         this.bundleDownloader = new BundleDownloader("hca");
     }
 
-    handle(msg: AmqpMessage): Promise<void> {
-        return LocalFileUploadHandler._parseAmqpMessage(msg).then(job => this.doLocalFileUpload(job));
-    }
-
-    doLocalFileUpload(job: Job): Promise<void> {
-        return this._maybeDownloadFiles(job, this.dirBasePath)
-            .then(() => LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter))
-            .then(() => LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath))
-            .return()
-    }
-
-    static _parseAmqpMessage(msg: AmqpMessage): Promise<Job> {
+    static _parseAmqpMessage(msg: string): Promise<Plan> {
         try {
-            return Promise.resolve(JSON.parse(msg.messageBytes) as Job);
+            return Promise.resolve(JSON.parse(msg) as Plan);
         } catch (err) {
-            console.error("Failed to parse message content (ignoring): " + msg.messageBytes);
+            console.error("Failed to parse message content (ignoring): " + msg);
             return Promise.reject(err);
-        }
-    }
-
-    _maybeDownloadFiles(job: Job, fileDirBasePath :string): Promise<void> {
-        if ( job.dcp_bundle_uuid ) {
-            const bundleFilesJob: DownloadBundleFilesJob = UploadPlanParser.convertToDownloadBundleFilesJob(job, fileDirBasePath);
-            return this.bundleDownloader.assertFiles(bundleFilesJob);
-        } else {
-            const s3FilesJob: DownloadS3FilesJob = UploadPlanParser.convertToDownloadFilesJob(job, fileDirBasePath);
-            return this.s3Downloader.assertFiles(s3FilesJob);
         }
     }
 
@@ -114,6 +94,44 @@ class LocalFileUploadHandler implements IHandler {
     static _submissionUuidFromSubmissionUri(submissionUri: url.URL): string {
         const splitPath: string[] = submissionUri.pathname.split("/");
         return splitPath[splitPath.length - 1];
+    }
+
+    handle(msg: string): Promise<boolean> {
+        return LocalFileUploadHandler._parseAmqpMessage(msg)
+            .then(plan => this.processUploadJobsSequential(plan.jobs));
+    }
+
+    processUploadJobsSequential(jobs: Job[]): Promise<true> {
+        if (jobs.length == 0) {
+            return Promise.resolve(true);
+        } else {
+            const job: Job = R.head(jobs)!;
+            return this.doLocalFileUpload(job)
+                .then(() => {
+                    return this.processUploadJobsSequential(R.tail(jobs))
+                })
+                .catch(error => {
+                    console.error("An error occured: ", error);
+                    return Promise.reject(error);
+                })
+        }
+    }
+
+    doLocalFileUpload(job: Job): Promise<boolean> {
+        return this._maybeDownloadFiles(job, this.dirBasePath)
+            .then(() => LocalFileUploadHandler._maybeBamConvert(job, this.dirBasePath, this.fastq2BamConverter))
+            .then(() => LocalFileUploadHandler._maybeUpload(job, this.fileUploader, this.dirBasePath))
+            .return(true)
+    }
+
+    _maybeDownloadFiles(job: Job, fileDirBasePath: string): Promise<void> {
+        if (job.dcp_bundle_uuid) {
+            const bundleFilesJob: DownloadBundleFilesJob = UploadPlanParser.convertToDownloadBundleFilesJob(job, fileDirBasePath);
+            return this.bundleDownloader.assertFiles(bundleFilesJob);
+        } else {
+            const s3FilesJob: DownloadS3FilesJob = UploadPlanParser.convertToDownloadFilesJob(job, fileDirBasePath);
+            return this.s3Downloader.assertFiles(s3FilesJob);
+        }
     }
 }
 
