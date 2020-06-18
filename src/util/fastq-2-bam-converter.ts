@@ -52,17 +52,6 @@ class Fastq2BamConverter {
         });
     }
 
-    /**
-     * Just assuming 10xV2 for now
-     */
-    static bamSchemaParams(): string {
-        return Fastq2BamConverter._10XV2Schema();
-    }
-
-    static _10XV2Schema(): string {
-        return "10xV2";
-    }
-
     static inputFastqParams(readsInfo: ConvertFile[]): Fastq2BamParams["inputFastqs"] {
         const readFilesFilterFn = (readInfo: ConvertFile) => readInfo.readIndex.startsWith("read");
         const indexFilesFilterFn = (readInfo: ConvertFile) => readInfo.readIndex.startsWith("index");
@@ -99,8 +88,12 @@ class Fastq2BamConverter {
     }
 
     static fastq2BamParamsFromConvertRequest(convertFilesJob: ConvertFilesJob): Fastq2BamParams {
+        let schema = "10xV2"
+        if (convertFilesJob.schema) {
+            schema = convertFilesJob.schema
+        }
         return {
-            schema: Fastq2BamConverter.bamSchemaParams(),
+            schema: schema,
             outputBamFilename: convertFilesJob.outputName,
             inputFastqs: Fastq2BamConverter.inputFastqParams(convertFilesJob.reads)
         }

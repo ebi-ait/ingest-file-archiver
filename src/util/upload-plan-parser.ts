@@ -49,6 +49,7 @@ class UploadPlanParser {
     static convertToConvertFilesJob(job: Job, fileDirBasePath: string): ConvertFilesJob {
         return {
             reads: UploadPlanParser.parseConvertFiles(job.conversion!.inputs),
+            schema: job.conversion!.schema,
             outputName: job.conversion!.output_name,
             outputDir: `${fileDirBasePath}/${job.manifest_id}`
         };
