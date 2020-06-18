@@ -43,24 +43,15 @@ class Fastq2BamConverter {
             exec(fastq2BamPath + " " + runArgs.join(" "),
                 {cwd: convertFilesJob.outputDir},
                 (Err, stdout, stderr) => {
+                    console.log(stdout)
                     if (Err) {
+                        console.error(stderr)
                         reject(Err);
                     } else {
                         resolve(0);
                     }
                 });
         });
-    }
-
-    /**
-     * Just assuming 10xV2 for now
-     */
-    static bamSchemaParams(): string {
-        return Fastq2BamConverter._10XV2Schema();
-    }
-
-    static _10XV2Schema(): string {
-        return "10xV2";
     }
 
     static inputFastqParams(readsInfo: ConvertFile[]): Fastq2BamParams["inputFastqs"] {
@@ -100,7 +91,7 @@ class Fastq2BamConverter {
 
     static fastq2BamParamsFromConvertRequest(convertFilesJob: ConvertFilesJob): Fastq2BamParams {
         return {
-            schema: Fastq2BamConverter.bamSchemaParams(),
+            schema: convertFilesJob.schema,
             outputBamFilename: convertFilesJob.outputName,
             inputFastqs: Fastq2BamConverter.inputFastqParams(convertFilesJob.reads)
         }

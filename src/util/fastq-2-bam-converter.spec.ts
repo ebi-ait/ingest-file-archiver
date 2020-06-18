@@ -29,6 +29,7 @@ describe("fastq-bam conversion tests", () => {
                 fileName: mockIndexPath
             }
         ],
+        schema: "10xV2",
         outputName: mockOutputName,
         outputDir: mockBaseDir
     };
