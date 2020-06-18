@@ -5,7 +5,7 @@ namespace ts {
 
     export type ConvertFilesJob = {
         reads: ConvertFile[],
-        schema?: string,
+        schema: string,
         outputName: string,
         outputDir: string;
     }
@@ -115,7 +115,7 @@ namespace ts {
 
     export type Conversion = {
         output_name: string,
-        schema?: string,
+        schema: string,
         inputs: File[]
     }
 

@@ -78,6 +78,7 @@ describe("Local file uploader tests", () => {
                     cloud_url: 'cloudUrl1'
                 }
             ],
+            schema: "10xV2",
             output_name: mockOutputName
         };
 

@@ -90,12 +90,8 @@ class Fastq2BamConverter {
     }
 
     static fastq2BamParamsFromConvertRequest(convertFilesJob: ConvertFilesJob): Fastq2BamParams {
-        let schema = "10xV2"
-        if (convertFilesJob.schema) {
-            schema = convertFilesJob.schema
-        }
         return {
-            schema: schema,
+            schema: convertFilesJob.schema,
             outputBamFilename: convertFilesJob.outputName,
             inputFastqs: Fastq2BamConverter.inputFastqParams(convertFilesJob.reads)
         }
