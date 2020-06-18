@@ -43,7 +43,9 @@ class Fastq2BamConverter {
             exec(fastq2BamPath + " " + runArgs.join(" "),
                 {cwd: convertFilesJob.outputDir},
                 (Err, stdout, stderr) => {
+                    console.log(stdout)
                     if (Err) {
+                        console.error(stderr)
                         reject(Err);
                     } else {
                         resolve(0);
