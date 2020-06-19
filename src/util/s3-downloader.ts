@@ -64,22 +64,20 @@ class S3Downloader {
     More details in https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html#API_GetObject_RequestSyntax
 */
     multipartDownload(source: string, range: HttpRange, filePath: string): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            this.getS3Stream(source, range)
-                .then((data) => {
-                    return S3Downloader.writeFile(data, filePath);
-                })
-                .then( (data) => {
-                    if (!data.next) {
-                        resolve(filePath)
-                    } else {
-                        this.multipartDownload(source, range.next(), filePath);
-                    }
-                })
-                .catch(error => {
-                    reject(error);
-                });
-        });
+        return this.getS3Stream(source, range)
+            .then((data) => {
+                return S3Downloader.writeFile(data, filePath);
+            })
+            .then( (data: S3StreamResponse) => {
+                if (!data.next) {
+                    return Promise.resolve(filePath)
+                } else {
+                    return this.multipartDownload(source, range.next(), filePath);
+                }
+            })
+            .catch((error: any) => {
+                return Promise.reject(error);
+            });
     }
 
     getS3Stream(source: string, range: HttpRange): Promise<S3StreamResponse> {
