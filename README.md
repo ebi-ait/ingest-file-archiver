@@ -109,3 +109,7 @@ All environment variables must be set when running in Upload Plan mode:
 - `AAP_PASSWORD`: password for the HCA AAP user account
 - `AWS_ACCESS_KEY_ID`: AWS Access Key (with access to Ingest Upload Location)
 - `AWS_SECRET_ACCESS_KEY`: AWS Secret Access Key (with access to Ingest Upload Location)
+
+### Batch File Archiver
+To speed up the upload by running uploading of sequencing runs in parallel, you could use the script here:
+https://github.com/ebi-ait/hca-ebi-dev-team/tree/master/scripts/batch_file_archiver
