@@ -85,7 +85,6 @@ describe("Local file uploader tests", () => {
         const files: File[] = [];
         const job: Job = {
             dsp_api_url: '',
-            ingest_api_url: '',
             submission_url: '',
             files: files,
             manifest_id: mockManifestId,
