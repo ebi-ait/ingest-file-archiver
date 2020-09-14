@@ -82,9 +82,20 @@ describe("S3 downloader tests", () => {
         //Act
         s3Downloader.getS3Stream(mockS3Url, mockRange)
             .then(response => response)
-            .then(text => {
-                expect(text).toBe(s3Text);
-                done();
+            .then(data => data.read)
+            .then(read => {
+                const chunks: any = [];
+
+                read.on("data", function (chunk) {
+                    chunks.push(chunk);
+                });
+
+                // Send the buffer or you can put it into a var
+                read.on("end", function () {
+                    expect(Buffer.concat(chunks).toString()).toBe(s3Text);
+                    done();
+                });
+
             });
     });
 
