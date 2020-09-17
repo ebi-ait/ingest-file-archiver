@@ -77,7 +77,6 @@ The ingest-archiver outputs a spec matching the required .json when attempting t
 {
     "jobs": [
         "dsp_api_url": string,
-        "ingest_api_url": string,
         "submission_url": string,
         "files": [{
             "name": string,

@@ -57,7 +57,7 @@ describe("Local file uploader tests", () => {
 
         const mockOutputName = "mockbam.bam";
         const mockManifestId = "mock-manifest-id";
-        const mockFileBasePathDir = `/data/myfiles/${mockManifestId}`;
+        const mockFileBasePathDir = `/data/myfiles`;
 
         const conversion: Conversion = {
             inputs: [
@@ -85,10 +85,9 @@ describe("Local file uploader tests", () => {
         const files: File[] = [];
         const job: Job = {
             dsp_api_url: '',
-            ingest_api_url: '',
             submission_url: '',
             files: files,
-            manifest_id: '',
+            manifest_id: mockManifestId,
             conversion: conversion
         };
 
@@ -97,7 +96,6 @@ describe("Local file uploader tests", () => {
         expect(convertRequestPair.reads).toContainEqual({readIndex: "read2", fileName: mockR2});
         expect(convertRequestPair.reads).toContainEqual({readIndex: "index1", fileName: mockIndex});
         expect(convertRequestPair.outputName).toEqual(mockOutputName);
-        expect(convertRequestPair.outputName).toEqual(mockOutputName);
-        expect(convertRequestPair.outputDir).toEqual(mockFileBasePathDir);
+        expect(convertRequestPair.outputDir).toEqual(`${mockFileBasePathDir}/${mockManifestId}`);
     });
 });
