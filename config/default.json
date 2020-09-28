@@ -11,7 +11,7 @@
         "password": "REDACTED"
       }
     },
-    "s3": {
+    "AWS": {
       "accessKeyId": "REDACTED",
       "accessKeySecret": "REDACTED"
     }

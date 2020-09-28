@@ -94,3 +94,5 @@ fabric.properties
 /data/**
 /ingest-ui.iml
 /private.yml
+
+_local/

@@ -13,6 +13,7 @@ import Fastq2BamConverter from "./src/util/fastq-2-bam-converter";
 import R from "ramda";
 import Promise from "bluebird";
 import TokenManager from "./src/util/token-manager";
+import AwsCliS3Downloader from "./src/util/awscli-s3-downloader";
 /* ----------------------------------- */
 
 const tokenClient = (() => {
@@ -34,6 +35,10 @@ const fastq2BamConverter = (() => {
     return new Fastq2BamConverter("/app/fastq/bin/fastq2bam");
 })();
 
+const awsCliS3Downloader = (() => {
+    return new AwsCliS3Downloader()
+})();
+
 const dirBasePath = (() => {
     let baseDir: string = config.get("FILES.baseDir") as string
     if (baseDir.length > 1 && baseDir.endsWith('/')) {
@@ -43,7 +48,7 @@ const dirBasePath = (() => {
 })();
 
 const localFileUploadHandler = (() => {
-    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, dirBasePath);
+    return new LocalFileUploadHandler(fileUploader, fastq2BamConverter, awsCliS3Downloader, dirBasePath);
 })();
 
 

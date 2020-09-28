@@ -13,7 +13,7 @@
     },
     "AWS": {
       "accessKeyId": "AWS_ACCESS_KEY_ID",
-      "accessKeySecret": "AWS_ACCESS_KEY_SECRET"
+      "accessKeySecret": "AWS_SECRET_ACCESS_KEY"
     }
   },
   "AMQP": {
