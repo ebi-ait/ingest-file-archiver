@@ -14,31 +14,31 @@ class UsiClient {
         this.usiApiConnectionProperties = usiApiConnectionProperties;
     }
 
-    checkFileAlreadyUploaded(submissionId: string, fileName: string) : Promise<boolean> {
+    checkFileAlreadyUploaded(submissionId: string, fileName: string): Promise<boolean> {
         return this.checkIfFileInSubmission(submissionId, fileName);
     }
 
-    retrieve(resourceUrl: string) : Promise<any> {
+    retrieve(resourceUrl: string): Promise<any> {
         return this.tokenManager.getToken().then(token => {
             return request({
                 url: resourceUrl,
                 method: "GET",
                 json: true,
-                headers : {
+                headers: {
                     Authorization: `Bearer ${token}`
                 }
             }).then(resp => Promise.resolve(resp));
         });
     }
 
-    retrieveSubmission(submissionId: string) : Promise<any> {
-        return this.retrieve(`${this.usiApiUrl}/api/submissions/${submissionId}`);
-    }
-
-    checkIfFileInSubmission(submissionId: string, fileName: string) : Promise<boolean>{
+    checkIfFileInSubmission(submissionId: string, fileName: string): Promise<boolean> {
         return this.retrieve(`${this.usiApiUrl}/api/files/search/by-filename-and-submission?submissionId=${submissionId}&filename=${fileName}`)
-            .then(() => {return Promise.resolve(true)})
-            .catch(err => {return Promise.resolve(false)});
+            .then(() => {
+                return Promise.resolve(true)
+            })
+            .catch(err => {
+                return Promise.resolve(false)
+            });
     }
 }
 
