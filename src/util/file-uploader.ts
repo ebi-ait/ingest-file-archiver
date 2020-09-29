@@ -101,7 +101,7 @@ class FileUploader {
                 },
                 onProgress: (bytesUploaded: number, bytesTotal: number) => {
                     const percentage = (bytesUploaded / bytesTotal * 100);
-                    if (percentage % 10 === 0) {
+                    if ((Math.floor(percentage) % 10) === 0) {
                         console.log(bytesUploaded, bytesTotal, percentage.toFixed(2) + "%");
                     }
                 },
