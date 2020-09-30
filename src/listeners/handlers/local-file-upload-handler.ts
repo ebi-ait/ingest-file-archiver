@@ -14,21 +14,21 @@ import {
 import Fastq2BamConverter from "../../util/fastq-2-bam-converter";
 import R from "ramda";
 import UploadPlanParser from "../../util/upload-plan-parser";
-import S3Downloader from "../../util/s3-downloader";
 import BundleDownloader from "../../util/bundle-downloader";
+import AwsCliS3Downloader from "../../util/awscli-s3-downloader";
 
 class LocalFileUploadHandler implements IHandler {
     fileUploader: FileUploader;
     fastq2BamConverter: Fastq2BamConverter;
-    s3Downloader: S3Downloader;
+    s3Downloader: AwsCliS3Downloader;
     bundleDownloader: BundleDownloader;
     dirBasePath: string;
 
-    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, dirBasePath: string) {
+    constructor(fileUploader: FileUploader, fastq2BamConverter: Fastq2BamConverter, s3Downloader: AwsCliS3Downloader, dirBasePath: string) {
         this.fileUploader = fileUploader;
         this.fastq2BamConverter = fastq2BamConverter;
         this.dirBasePath = dirBasePath;
-        this.s3Downloader = S3Downloader.default();
+        this.s3Downloader = s3Downloader;
         this.bundleDownloader = new BundleDownloader("hca");
     }
 
