@@ -1,4 +1,4 @@
-FROM node:13.8.0-alpine3.10
+FROM quay.io/ebi-ait/ingest-base-images:node_13.8.0-alpine3.10
 
 WORKDIR /app
 COPY app.ts package*.json tsconfig.json ./
